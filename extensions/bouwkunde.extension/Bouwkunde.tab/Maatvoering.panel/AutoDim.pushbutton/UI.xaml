@@ -24,7 +24,7 @@
             Background="{DynamicResource LightGrayBrush}"
             Padding="20,12">
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="btn_start" Content="Start selectie"
+            <Button x:Name="btn_start" Content="Start"
                     Style="{DynamicResource PrimaryButton}"/>
         </StackPanel>
     </Border>
@@ -42,13 +42,99 @@
 
             <!-- Maatvoering -->
             <TextBlock Text="Maatvoering" Style="{DynamicResource SectionHeader}"/>
-            <CheckBox x:Name="chk_grids" Content="Grids" IsChecked="True"
+            <TextBlock Text="Het nummer bepaalt op welke maatlijn de maten komen. Zelfde nummer = zelfde maatlijn. Nummer 1 ligt exact op de getekende lijn."
+                       TextWrapping="Wrap" FontStyle="Italic" FontSize="11"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="0,0,0,8"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox x:Name="chk_grids" Content="Grids" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_grids_line" Text="1" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox x:Name="chk_walls" Content="Wanden" IsChecked="True" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_walls_line" Text="1" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox x:Name="chk_columns" Content="Kolommen" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_columns_line" Text="1" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox x:Name="chk_floors" Content="Vloeranden" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_floors_line" Text="1" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox x:Name="chk_rooms" Content="Ruimtescheidingslijnen" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_rooms_line" Text="1" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                <CheckBox x:Name="chk_doors" Content="Wandeinden + sparingen (deur/raam)" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_doors_line" Text="1" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+            <TextBlock Text="Lijn NAAST de wand tekenen, niet erdoorheen. Wanden vooraf selecteren mag ook."
+                       TextWrapping="Wrap" FontStyle="Italic" FontSize="11"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="24,0,0,6"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                <CheckBox x:Name="chk_total" Content="Totaal (buitenste twee punten)" Width="260"
+                          VerticalAlignment="Center"
+                          Style="{DynamicResource StandardCheckBox}"/>
+                <TextBox x:Name="txt_total_line" Text="2" Width="36"
+                         Style="{DynamicResource StandardTextBox}"/>
+            </StackPanel>
+
+            <!-- Hulplijnen -->
+            <TextBlock Text="Hulplijnen" Style="{DynamicResource SectionHeader}"/>
+            <CheckBox x:Name="chk_line_style"
+                      Content="Lijnen uit de tekening halen (lijnstijl)"
+                      IsChecked="True"
                       Style="{DynamicResource StandardCheckBox}" Margin="0,0,0,6"/>
-            <CheckBox x:Name="chk_total" Content="Totaal (buitenste punten)"
-                      Style="{DynamicResource StandardCheckBox}" Margin="0,0,0,6"/>
-            <CheckBox x:Name="chk_walls" Content="Wanden" IsChecked="True"
-                      Style="{DynamicResource StandardCheckBox}" Margin="0,0,0,6"/>
-            <CheckBox x:Name="chk_columns" Content="Kolommen"
+            <TextBox x:Name="txt_line_style" Text="00_maatvoering_plattegronden"
+                     Style="{DynamicResource StandardTextBox}" Margin="24,0,0,6"/>
+            <TextBlock Text="Alle lijnen met deze lijnstijl in de actieve view worden achter elkaar bemaat. Vinkje uit, of geen enkele lijn gevonden: dan lijn voor lijn aanwijzen."
+                       TextWrapping="Wrap" FontStyle="Italic" FontSize="11"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="24,0,0,20"/>
+
+            <!-- Plaatsing -->
+            <TextBlock Text="Plaatsing" Style="{DynamicResource SectionHeader}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <TextBlock Text="Afstand tussen maatlijnen:"
+                           VerticalAlignment="Center" FontSize="13"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Margin="0,0,8,0"/>
+                <TextBox x:Name="txt_offset" Text="500" Width="60"
+                         Style="{DynamicResource StandardTextBox}"/>
+                <TextBlock Text="mm" VerticalAlignment="Center" FontSize="13"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Margin="8,0,0,0"/>
+            </StackPanel>
+            <CheckBox x:Name="chk_delete_line" Content="Hulplijn verwijderen na plaatsen"
+                      IsChecked="True"
                       Style="{DynamicResource StandardCheckBox}" Margin="0,0,0,20"/>
 
             <!-- Filter -->
@@ -78,7 +164,7 @@
                     CornerRadius="4" Padding="12">
                 <TextBlock TextWrapping="Wrap" FontStyle="Italic" FontSize="11"
                            Foreground="{DynamicResource TextSecondaryBrush}"
-                           Text="Werkwijze:&#x0a;1. Teken Detail Lines door de elementen&#x0a;2. Selecteer lijnen één voor één&#x0a;3. Per lijn worden aparte maatlijnen gemaakt&#x0a;4. Druk ESC om te stoppen"/>
+                           Text="Werkwijze:&#x0a;1. Teken de hulplijnen met lijnstijl 00_maatvoering_plattegronden&#x0a;2. Start - alle lijnen met die stijl worden in één keer bemaat&#x0a;3. Per lijn komt er één maatlijn per nummer, met alles wat aangevinkt staat&#x0a;&#x0a;Handmatig: vinkje 'Lijnen uit de tekening halen' uit, dan lijnen aanwijzen (ESC om te stoppen)"/>
             </Border>
 
         </StackPanel>

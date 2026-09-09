@@ -1,8 +1,20 @@
 # 3BM pyRevit Project - TODO
 
-*Laatste update: 3 september 2026*
+*Laatste update: 9 september 2026*
 
 ---
+
+## AutoDim v2.2 — lijnstijl-modus + ruimtescheiding (9 september 2026, live gedraaid)
+
+> Drie uitbreidingen: (1) **ruimtescheidingslijnen** (`OST_RoomSeparationLines`) als maatbron, met eigen maatlijnnummer, default 1 — reference via `GeometryCurve.Reference`; (2) **lijnstijl-modus, standaard AAN**: alle lijnen met lijnstijl `00_maatvoering_plattegronden` in de actieve view worden achter elkaar bemaat, geen aanwijzen meer; niets gevonden of vinkje uit = terugval op handmatig picken; (3) lijnen die geen maatlijn opleveren blijven staan, worden gelogd met element-id en staan na afloop **geselecteerd** (ZS om erheen te zoomen).
+
+> **Root cause gefixt (live geverifieerd via revit_bridge op PVG_TO_BWK_OXS):** een maatlijn met twee maatpunten rapporteert Revit als `NumberOfSegments == 0` met een LEGE `Segments`-collectie; de maat staat op `Dimension.Value`. De check `dim.Segments.Size > 0` keurde die maatlijnen daardoor af terwijl ze klopten (gemeten: 3845 / 5150 / 1300 mm vloerrandmaten), liet ze als wees in het model staan én hield de hulplijn vast. Nu: bruikbaar bij `NumberOfSegments > 0` OF `Value is not None`, en een echt onbruikbare maatlijn wordt opgeruimd i.p.v. achtergelaten. Nulsegment-controle uitgebreid naar het enkelsegment-geval.
+
+- [ ] **Hertest na Reload** — draaien op een plattegrond met alleen vloerranden (2 maatpunten): maatlijn moet blijven staan én de hulplijn moet weg zijn. Dat was precies het falende geval.
+- [ ] **Ruimtescheidingslijnen live testen** — optie aanvinken in een plattegrond met `<Room Separation>`-lijnen; controleer dat de maat op de lijn zelf landt en niet op een nabije wand.
+- [ ] **Lijnen die 0 maatpunten geven onderzoeken** — in de run van 16:10 hadden 4 van de 10 lijnen `Crossing walls: 0`. Kandidaten: wanden zitten in het linked model (optie stond uit) of de lijn ligt náást de wand (deur-werkwijze) terwijl "Wandeinden + sparingen" uit stond. Vaststellen welke van de twee.
+- [ ] **Ruimtescheidingslijnen uit linked models** — nu bewust niet ondersteund (curve-references uit een link zijn niet betrouwbaar); alleen oppakken als het in de praktijk nodig blijkt.
+- [ ] **`context: zero-doc` in WipeConstraints/bundle.yaml** — knop is klikbaar zonder document terwijl het script een selectie nodig heeft; overwegen te vervangen door `selection`.
 
 ## Materialendatabase — vast id-veld (3 september 2026)
 
@@ -250,7 +262,7 @@ Alle bestaande tools gebruiken Windows Forms. Nieuwe tools worden in WPF gebouwd
 
 ### 3BM_Bouwkunde Verbetering
 - [ ] Rc-tool uitbreiden: dynamische vochtbalans (Glaser → tijdsafhankelijk)
-- [ ] AutoDim: reference detection verbeteren bij complexe wanden
+- [ ] AutoDim: reference detection verbeteren bij complexe wanden (zie ook AutoDim v2.2 hierboven)
 - [ ] SheetParameters: `V Peil Zichtbaar` + `Kenmerknummer` — params bestaan niet in titleblock-family `A4_A0_grootformaat`. WIP: family aanpassen óf UI-velden verwijderen
 - [x] ~~SheetParameters: tekst-afsnijding op HD schermen oplossen~~ → opgelost door WPF migratie
 

@@ -1,12 +1,12 @@
 # 3BM pyRevit Project - Status
 
-*Laatste update: 5 september 2026*
+*Laatste update: 9 september 2026*
 
 ---
 
 ## Extensies Overzicht
 
-### bouwkunde.extension (21 tools)
+### bouwkunde.extension (23 tools)
 
 | Tool | Panel | UI Framework | Status | Beschrijving |
 |------|-------|--------------|--------|--------------|
@@ -18,7 +18,8 @@
 | TrapTekenen (Trap 2D) | Bouwbesluit | pyRevit forms | **WIP** | L-trap onderkwart 2D-plattegrond, 4 verdrijvingsmethoden, polygon-input (24 mei) |
 | Vlakaanzicht | Aanzichten | pyRevit forms | **WIP** | Section loodrecht op gepickt vlak (schuin dak/wand/vloer). Kijkrichting-bug gefixt 16 juli (BasisZ = -normaal, live geverifieerd); vliesgevel-crop-fix + sloped-oriëntatie hertest nog open |
 | WarmteverliesGrensvlakCheck | Bouwbesluit | **WPF** | Stabiel | Visuele SEGC-grensvlak-controle vóór warmteverlies-export, met shared params per vlak |
-| AutoDim | Maatvoering | **WPF** | Stabiel | Automatische maatvoering via Detail Lines |
+| AutoDim | Maatvoering | **WPF** | Stabiel | Automatische maatvoering langs hulplijnen. v2.2 (9 sep): lijnen worden standaard op lijnstijl `00_maatvoering_plattegronden` uit de view gehaald (geen aanwijzen meer), ruimtescheidingslijnen als maatbron, vloeranden/deuren/linked models; enkelsegment-bug gefixt |
+| WipeConstraints (Constraints Wissen) | Maatvoering | pyRevit forms | **Nieuw** | Constraints verwijderen op de selectie; klapt een group uit naar members, werkt binnen Edit Group (SubTransaction), rolt terug bij verschuiving (8 sep) |
 | CrossDim | Maatvoering | WinForms | Stabiel | Kruislings dimensioneren |
 | WandVloerAfwerking | Afwerking | WinForms | Stabiel | Wand/vloer afwerkingslagen per ruimte |
 | SheetParameters | Document | **WPF** | Stabiel | Bulk update sheet + titleblock parameters (2026-08-31: bulk-performance — gebufferde output, 1 titleblock-collector, skip ongewijzigde waarden) |
@@ -110,7 +111,7 @@ bouwkunde.extension/
     ├── Kozijnstaat.panel/      Wizard, Create, Maatvoeren, GlasTag,
     │                           WindowTag, Aantallen, Rename, Legend,
     │                           Config
-    ├── Maatvoering.panel/      AutoDim, CrossDim
+    ├── Maatvoering.panel/      AutoDim, CrossDim, WipeConstraints
     ├── Materialen.panel/       DbExp, MatExp, MatImp, NAAKTGenerator
     └── Test.panel/             MCPStatus
 

@@ -1,0 +1,9 @@
+title: "Constraints\nWissen"
+tooltip: >-
+  Verwijdert constraints (maat- en uitlijnbeperkingen) die aan de selectie hangen.
+  Anders dan de pyRevit-versie: een geselecteerde group wordt uitgeklapt naar zijn
+  members, werkt binnen Edit Group (SubTransaction), en rolt terug als er iets
+  verschuift.
+author: 3BM Bouwkunde
+highlight: new
+context: zero-doc

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Achtergrond -->
+  <rect x="1" y="1" width="30" height="30" rx="3" fill="#350E35"/>
+
+  <!-- Hangslot = de constraint -->
+  <path d="M 11.5 13 A 4.5 4.5 0 0 1 20.5 13"
+        fill="none" stroke="#45B6A8" stroke-width="2.4"/>
+  <rect x="9.5" y="14" width="13" height="11" rx="2.2" fill="#45B6A8"/>
+
+  <!-- Sleutelgat -->
+  <circle cx="16" cy="19.9" r="1.7" fill="#350E35"/>
+  <polygon points="15.2,20.5 16.8,20.5 17.4,23.4 14.6,23.4" fill="#350E35"/>
+
+  <!-- Doorhaling: donkere baan eronder zodat de streep loskomt van het teal -->
+  <line x1="4.5" y1="27.5" x2="27.5" y2="4.5"
+        stroke="#350E35" stroke-width="4.4" stroke-linecap="round"/>
+  <line x1="4.5" y1="27.5" x2="27.5" y2="4.5"
+        stroke="#DB4C40" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

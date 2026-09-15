@@ -1,0 +1,74 @@
+{
+ "(med) rij tuss tot46": {
+  "gevel_totaal": 67.2,
+  "raam_pct": 28.7,
+  "deur_pct": 9.4,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) rij hoek tot46": {
+  "gevel_totaal": 115.8,
+  "raam_pct": 18.4,
+  "deur_pct": 6.7,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) rij tuss 46-64": {
+  "gevel_totaal": 64.5,
+  "raam_pct": 30.8,
+  "deur_pct": 7.5,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) rij tuss 65-74": {
+  "gevel_totaal": 67.2,
+  "raam_pct": 37.1,
+  "deur_pct": 6.8,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) rij tuss 75-91": {
+  "gevel_totaal": 60.6,
+  "raam_pct": 30.0,
+  "deur_pct": 7.5,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) 2-1 kap tot65": {
+  "gevel_totaal": 117.0,
+  "raam_pct": 19.6,
+  "deur_pct": 5.9,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) vrij tot65": {
+  "gevel_totaal": 167.5,
+  "raam_pct": 16.9,
+  "deur_pct": 4.8,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) port tot46 GEM": {
+  "gevel_totaal": 36.5,
+  "raam_pct": 29.3,
+  "deur_pct": 16.1,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ },
+ "(med) gal tot65 GEM": {
+  "gevel_totaal": 33.8,
+  "raam_pct": 44.3,
+  "deur_pct": 13.9,
+  "gbo": null,
+  "lagen": null,
+  "hoogte": null
+ }
+}

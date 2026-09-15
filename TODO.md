@@ -4,6 +4,75 @@
 
 ---
 
+## Contextpanden met echte ramen — onderzoekslijn (15 september 2026)
+
+> Doel: omliggende gebouwen realistisch in beeld, met ramen en deuren als **geometrie**
+> in plaats van een gevelfoto. Proef gedraaid en geborgd in
+> `docs/2026-09-15-contextpanden-ifc/` — lees daar eerst de herkomsttabel, die bepaalt
+> waarvoor het resultaat wel en niet gebruikt mag worden.
+
+**Stand:** proef werkt. 65 panden → IFC4 met 789 wanden, 1979 ramen, 49 deuren,
+4,9 MB, in 17 seconden, volledig buiten Revit om (CPython + ifcopenshell). De
+openingen snijden echt door de wanden. Wat eruit komt is een plausibele reconstructie
+binnen een gemeten envelop — massa en bouwmuren kloppen, raamposities zijn verzonnen.
+
+### Route-afweging (afgerond, niet heropenen zonder reden)
+
+| Route | Oordeel |
+|---|---|
+| A. Gevelfoto als textuur (Street View) | **Vervallen.** Nepdiepte, en de Google Maps Platform-voorwaarden verbieden expliciet 3D-gebouwmodellen maken uit Street View-beelden en cachen >30 dagen. Niet bruikbaar in een deliverable |
+| B. Parametrisch uit BAG + 3DBAG + RVO-kentallen | **Gekozen.** Levert echte geometrie, gratis, data al in huis |
+| C. Google Photorealistic 3D Tiles | Geblokkeerd voor EER-billing (403 op tile.googleapis.com) |
+| D. Cyclomedia puntenwolk | **Upgrade van B, later.** Vervangt de verzonnen raamposities door metingen |
+
+### Volgende stappen aan de proef
+
+- [ ] **Ringprofiel per pand** i.p.v. losse wandsegmenten — lost de overlappende hoeken
+  op, waarschijnlijk ook het rare vensterritme bij hoeken, en is minder code dan nu.
+  Grootste zichtbare winst per regel.
+- [ ] **Daken** — 91% van de proefbbox is `b3_dak_type = slanted`, nu plat afgetopt op
+  `b3_h_50p`. Nokrichting is af te leiden uit `b3_azimut` / `b3_h_nok`.
+- [ ] **KENTAL compleet maken** — nu 9 van de 51 RVO-types. 23 van de 65 panden vielen
+  terug op een verkeerd tijdvak (flat uit 2002 kreeg het raamaandeel van een
+  vooroorlogs portiek). Uitlezen uit `data-voorbeeldwoningen-2022.xlsx`, tabblad
+  `(med) <type> <periode>`, rijen 33/43/52 kolom G. Ongeveer tien minuten werk.
+- [ ] **Ramen smaller maken i.p.v. overslaan** — nu 20% glas waar 27% het doel was.
+- [ ] **`IfcMapConversion`** met de RD-oorsprong, zodat de IFC vanzelf op z'n plek valt
+  bij het linken naast de 3DBAG-import.
+- [ ] **`IfcPropertySet` per pand met de herkomst** — bron en status (gemeten /
+  geschat / aangenomen) per eigenschap, zodat die informatie meereist met het model
+  in plaats van in een mailtje te blijven hangen. Verplicht voordat dit ooit naar een
+  opdrachtgever gaat.
+- [ ] Plint, daklijst, negge-diepte — dit maakt het beeld meer "karton" dan de ramen.
+
+### Cyclomedia-spoor (gemeten specs, nog geen actie)
+
+Velodyne HDL-32E, 700.000 pulsen/s. **>1900 punten/m² op een muur op 10 m** (puntafstand
+~2,3 cm), **relatieve nauwkeurigheid 2 cm**, absolute positie σ = 10 cm, geleverd in
+**EPSG:7415 (RD+NAP)** — ons eigen stelsel. Een raam van 1,2×1,5 m vangt ~3400 punten;
+dagkanten op orde 2-3 cm te lokaliseren.
+
+Prijzen: gratis testlicentie bouwsector **200 credits t.w.v. €400, 2 weken**;
+abonnement vanaf €20/maand; vanaf €0,71 per foto bij volume. 1 credit ≈ 1 opgevraagde
+foto, dezelfde foto binnen 15 min kost niets extra.
+
+- [ ] **Eerste vraag aan de accountmanager: hoe wordt de puntenwolk geleverd?**
+  Downloadbare LAZ-tegels betekent automatiseren (past direct naast onze
+  AHN-LAZ-verwerking); viewer-only betekent handwerk per pand. Dat antwoord bepaalt
+  of dit spoor überhaupt zin heeft.
+- [ ] Testlicentie aanvragen en op één bouwblok toetsen of de detectie haalt wat de
+  literatuur belooft. Raamextractie uit mobile-laserscanning scoort F1 0,74-0,98 en
+  3D-precisie 79,6-98,0%, maar dat hangt sterk van de scannerklasse af: ~78% met
+  survey-grade tegen ~64% met lichtere scanners, en lichtere wolken **overschatten**
+  de opening systematisch. De HDL-32E is geen Riegl — reken op de onderkant.
+- [ ] **Achtergevels blijven een gat.** Mobile mapping ziet alleen wat vanaf de
+  openbare weg zichtbaar is; bij een tussenwoning zit ~de helft van het glas aan de
+  achterkant. Dat vraagt schuine luchtfoto's — precies wat de Spotr/Rotterdam-pilot
+  combineerde. Naast `hwh-ahn` staan in dezelfde objectstore `hwh-ortho` en
+  `hwh-stereo`; uitzoeken of die net zo open zijn als de AHN-tegels.
+
+---
+
 ## GIS2BIM — knopsessie 15 september 2026 (10 fixes, deels nog niet in Revit getest)
 
 > Knop-voor-knop doorlopen met de gebruiker op `GIS2BIM_25_v1` (Zeekant 37, Den Haag, RD 78653/458298). Alle diagnoses zijn tegen de live endpoints geverifieerd; wat in Revit is bevestigd staat hieronder apart.

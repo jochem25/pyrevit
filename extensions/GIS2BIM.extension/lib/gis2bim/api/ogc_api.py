@@ -119,18 +119,18 @@ class OGCAPIClient(object):
         Args:
             collection_id: ID van de collection (bijv. "wegdeel")
             bbox: Tuple (xmin, ymin, xmax, ymax) in RD coordinaten
-            limit: Features per request (max 1000 voor PDOK)
-            max_features: Maximum totaal aantal features
+            limit: Features per pagina (max 1000 voor PDOK)
+            max_features: Maximum totaal aantal features over alle pagina's
             crs: Coordinaat referentie systeem
 
         Returns:
             Lijst van OGCAPIFeature objecten
         """
         all_features = []
-        offset = 0
+        url = self._build_url(collection_id, bbox, limit, crs)
+        truncated = False
 
-        while len(all_features) < max_features:
-            url = self._build_url(collection_id, bbox, limit, offset, crs)
+        while url and len(all_features) < max_features:
             print("[OGC API] URL: {0}".format(url))
 
             try:
@@ -142,25 +142,50 @@ class OGCAPIClient(object):
                 print("[OGC API] {0}: numberReturned={1}, numberMatched={2}".format(
                     collection_id, number_returned, number_matched))
 
-                features = self._parse_geojson(data)
-                all_features.extend(features)
+                all_features.extend(self._parse_geojson(data))
 
                 if number_returned < limit:
-                    # Geen volgende pagina
+                    # Laatste pagina
                     break
 
-                offset += limit
+                url = self._next_link(data)
+                if url is None:
+                    break
 
             except Exception as e:
                 print("[OGC API] Request error for {0}: {1}".format(
                     collection_id, e))
                 import traceback
                 traceback.print_exc()
+                truncated = True
                 break
+
+        if len(all_features) >= max_features:
+            truncated = True
+
+        if truncated:
+            print("[OGC API] {0}: AFGEKAPT op {1} features "
+                  "(max_features={2}) - er is meer data".format(
+                      collection_id, len(all_features), max_features))
 
         print("[OGC API] {0}: totaal {1} features opgehaald".format(
             collection_id, len(all_features)))
         return all_features[:max_features]
+
+    def _next_link(self, data):
+        """Href van de 'next'-link uit een OGC API Features respons.
+
+        PDOK pagineert met een ondoorzichtige cursor, niet met offset: een
+        request met &offset=... geeft HTTP 400 'unknown query parameter(s)
+        found: offset'. De enige manier naar pagina 2 is de link volgen.
+        """
+        for link in data.get("links", []):
+            if link.get("rel") == "next" and link.get("href"):
+                href = link["href"]
+                if "f=json" not in href:
+                    href += "&f=json" if "?" in href else "?f=json"
+                return href
+        return None
 
     def get_collections(self):
         """
@@ -185,7 +210,7 @@ class OGCAPIClient(object):
             print("Get collections error: {0}".format(e))
             return []
 
-    def _build_url(self, collection_id, bbox, limit, offset, crs):
+    def _build_url(self, collection_id, bbox, limit, crs):
         """Bouw OGC API Features URL."""
         # CRS URI voor RD (EPSG:28992)
         crs_code = crs.replace("EPSG:", "")
@@ -210,9 +235,6 @@ class OGCAPIClient(object):
             crs=crs_uri,
             limit=limit
         )
-
-        if offset > 0:
-            url += "&offset={0}".format(offset)
 
         return url
 

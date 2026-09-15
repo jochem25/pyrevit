@@ -385,7 +385,10 @@ class BAG3DWindow(Window):
         obj_paths = client.download_tiles_parallel(tiles, lod=lod)
         log("{0} OBJ bestanden gedownload".format(len(obj_paths)))
 
-        reader = OBJReader()
+        # sanitize=True: 3DBAG levert zelden een vertex met gedraaide
+        # coordinaten, wat een gebouw met een spike van honderden kilometers
+        # oplevert. Zie OBJReader._saneer_vertices.
+        reader = OBJReader(sanitize=True, log=log)
         origin_x, origin_y = self.location_rd
         total_shapes = 0
 

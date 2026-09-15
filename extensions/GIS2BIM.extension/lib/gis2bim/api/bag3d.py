@@ -104,7 +104,10 @@ class BAG3DClient(object):
 
         url = (
             "{base}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature"
-            "&typeName=BAG3D:Tiles"
+            # Let op: kleine letter. 'BAG3D:Tiles' geeft sinds een wijziging
+            # aan de 3DBAG-service HTTP 400 "Feature type BAG3D:Tiles unknown";
+            # GetCapabilities noemt de laag 'BAG3D:tiles'.
+            "&typeName=BAG3D:tiles"
             "&bbox={xmin},{ymin},{xmax},{ymax}"
         ).format(
             base=self.WFS_URL,

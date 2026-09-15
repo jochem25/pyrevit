@@ -195,8 +195,10 @@
                                VerticalAlignment="Center"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                Margin="0,0,12,0"/>
-                    <ComboBox x:Name="cmb_view" Grid.Column="1"
-                              Padding="8,6"/>
+                    <TextBlock x:Name="txt_view" Grid.Column="1"
+                               Text="GIS2BIM_OSM"
+                               VerticalAlignment="Center"
+                               FontWeight="Medium"/>
                 </Grid>
 
                 <!-- Status/Progress -->

@@ -187,9 +187,36 @@ class OpschonenWindow(WPFWindow):
         }
         self.btn_cancel.Click += self.on_cancel
         self.btn_execute.Click += self.on_execute
+        self.btn_toggle_all.Click += self.on_toggle_all
+        for chk in self._chk.values():
+            chk.Checked += self.on_check_changed
+            chk.Unchecked += self.on_check_changed
+        self._update_toggle_label()
 
     def on_cancel(self, sender, args):
         self.close_cancel()
+
+    # -- alles aan / alles uit ------------------------------------------------
+    def _all_checked(self):
+        for chk in self._chk.values():
+            if not chk.IsChecked:
+                return False
+        return True
+
+    def _update_toggle_label(self):
+        if self._all_checked():
+            self.btn_toggle_all.Content = "Alles uit"
+        else:
+            self.btn_toggle_all.Content = "Alles aan"
+
+    def on_check_changed(self, sender, args):
+        self._update_toggle_label()
+
+    def on_toggle_all(self, sender, args):
+        target = not self._all_checked()
+        for chk in self._chk.values():
+            chk.IsChecked = target
+        self._update_toggle_label()
 
     def _selected_keys(self):
         return [k for k, chk in self._chk.items() if chk.IsChecked]

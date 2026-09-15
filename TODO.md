@@ -1,6 +1,32 @@
 # 3BM pyRevit Project - TODO
 
-*Laatste update: 9 september 2026*
+*Laatste update: 15 september 2026*
+
+---
+
+## GIS2BIM — knopsessie 15 september 2026 (10 fixes, deels nog niet in Revit getest)
+
+> Knop-voor-knop doorlopen met de gebruiker op `GIS2BIM_25_v1` (Zeekant 37, Den Haag, RD 78653/458298). Alle diagnoses zijn tegen de live endpoints geverifieerd; wat in Revit is bevestigd staat hieronder apart.
+
+**In Revit bevestigd werkend (uit de logs van 15:02-15:10):**
+- AHN LAZ: `AHN5_C_078000_458000.COPC` -> 7444 punten, TopographySurface + luchtfoto-textuur
+- BAG3D: 3 tiles, 3 OBJ, 3 DirectShapes (46671 / 9012 / 6351 vertices)
+- WFS: 736 percelen, 30 straatnamen, 711 panden
+- Natura2000: FilledRegionType-fallback greep -> 30 filled regions
+- WMS: `1640.4x1640.4ft` (vierkant, niet meer platgedrukt)
+
+**Nog te testen na Reload:**
+- [ ] **OSM** — vaste view `GIS2BIM_OSM` (aanmaken als hij ontbreekt) + Overpass-retry. Beide paden zijn buiten Revit getest (765 features resp. 3 pogingen -> nette fout), de Revit-kant niet.
+- [ ] **BAG3D vertexsanitatie** — de drie bestaande DirectShapes verwijderen en opnieuw importeren; in de log moet `vertex 45951 hersteld` verschijnen. Bevestigd op het bestand: bbox gaat van Z=458360,88 m naar Z=35,06 m, geen enkele face verloren.
+- [ ] **BGT met cursor-paginering** — wordt trager: alleen `pand` gaat van 1000 naar 1865 features. Knop om te temperen: `max_features=5000` in `BGT.pushbutton/script.py:189`.
+- [ ] **Opschonen** — alle categorieen staan nu default aan, met een knop "Alles aan / alles uit". **Let op:** default is ook bereik "Hele document"; dat sloopt in een klik alle tekstnotities/detaillijnen/filled regions van het project, niet alleen de GIS-import. Overwegen `rb_view` (actieve view) als default-bereik.
+
+**Openstaand, nog niet aangepakt:**
+- [ ] **WFS kapt af op 1000 features** — `Huisnummers: 1000` in de log. De PDOK BAG WFS negeert `count=10000` en geeft geen `numberMatched`. Getest: `&startIndex=1000` levert nog 340 records. Zelfde stille truncatie als BGT had, maar andere paginatiemethode (`startIndex`, niet de OGC-cursor).
+- [ ] **StreetView HTTP 403** — niets aan de code. Google Cloud-project: Street View Static API enablen, billing koppelen, referrer-restrictie op de key controleren.
+- [ ] **FilledRegionType `Natura2000` in de template** — de fallback pakt nu `MLA_MP_isolatie_25mm`. Werkt, ziet er niet uit.
+- [ ] **Overpass-mirrors** — bewust NIET ingebouwd. `kumi.systems` en `private.coffee` lopen vanaf 3BM-WS1000 in een timeout van 45 s (lokaal geblokkeerd?), `overpass.osm.ch` is een Zwitsers extract dat voor NL leeg teruggeeft. Uitzoeken of het aan de werkplek ligt voordat er een mirror bij komt.
+- [ ] **AHN-jaargangen** — de indexen op `basisdata.nl/hwh-portal/20230609_tmp/links/nationaal/Nederland/` (46 stuks, o.a. `AHN4_KM_PC`, `AHN5_KM_PC`, `AHN6_KM_PC_COPC`) bevatten per tegel `file`, `size` en `sha256`. Bruikbaar om van jaargang te kunnen wisselen en om vooraf te weten of een tegel bestaat i.p.v. op een 403 te stuiten.
 
 ---
 

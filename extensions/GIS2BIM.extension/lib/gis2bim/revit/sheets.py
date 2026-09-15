@@ -211,12 +211,23 @@ def place_image_on_sheet(doc, sheet, image_path, center_x, center_y,
         doc, sheet, image_type.Id, placement
     )
 
-    # 4. Schaal instellen
+    # 4. Schaal instellen (verhouding vastzetten, anders past Revit alleen
+    #    de breedte aan en blijft de hoogte op de importwaarde staan)
+    try:
+        image_instance.LockProportions = True
+    except Exception as e:
+        log("LockProportions niet zetbaar: {0}".format(e))
+
     current_width = image_instance.Width
+    current_height = image_instance.Height
     if current_width > 0:
+        desired_height = img_size * (current_height / current_width)
         image_instance.Width = img_size
-        log("Image geschaald: {0:.4f}ft (was {1:.4f}ft)".format(
-            img_size, current_width))
+        if abs(image_instance.Height - desired_height) > 0.0001:
+            image_instance.Height = desired_height
+        log("Image geschaald: {0:.4f}x{1:.4f}ft (was {2:.4f}x{3:.4f}ft)".format(
+            image_instance.Width, image_instance.Height,
+            current_width, current_height))
 
     return image_instance
 

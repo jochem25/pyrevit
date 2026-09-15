@@ -306,9 +306,19 @@ class Natura2000Window(Window):
             # Schaal 1:1000 — Revit limiet is 30.000 ft (~9.1 km)
             # Bij 1:1000 wordt 40km bbox -> 40m in Revit -> ~131 ft
             desired_width_ft = (bbox_size / IMAGE_SCALE) * METER_TO_FEET
+            try:
+                image_instance.LockProportions = True
+            except Exception as e:
+                log("LockProportions niet zetbaar: {0}".format(e))
+
             current_width = image_instance.Width
+            current_height = image_instance.Height
             if current_width > 0:
+                desired_height_ft = desired_width_ft * (
+                    current_height / current_width)
                 image_instance.Width = desired_width_ft
+                if abs(image_instance.Height - desired_height_ft) > 0.001:
+                    image_instance.Height = desired_height_ft
                 log("Luchtfoto geschaald naar {0:.1f}ft (bbox {1}m, schaal 1:{2})".format(
                     desired_width_ft, bbox_size, IMAGE_SCALE))
 
@@ -327,6 +337,17 @@ class Natura2000Window(Window):
         except Exception:
             pass
 
+    def _get_default_filled_region_type(self):
+        """Eerste beschikbare FilledRegionType, als vangnet."""
+        try:
+            types = DB.FilteredElementCollector(self.doc).OfClass(
+                DB.FilledRegionType).ToElements()
+            if types:
+                return types[0]
+        except Exception:
+            pass
+        return None
+
     def _draw_filled_regions(self, view, result, origin_x, origin_y):
         """Teken filled regions voor Natura 2000 polygonen op schaal 1:1000."""
         from System.Collections.Generic import List as GenericList
@@ -334,8 +355,20 @@ class Natura2000Window(Window):
         # Zoek filled region type "Natura2000"
         fr_type = get_filled_region_type(self.doc, "Natura2000")
         if fr_type is None:
-            log("FilledRegionType 'Natura2000' niet gevonden")
-            return
+            # Projecten zonder eigen 'Natura2000'-type kregen hier stil geen
+            # enkel vlak: alleen de labels en de luchtfoto verschenen. Val
+            # terug op het eerste beschikbare type, net als de BGT-tool.
+            fr_type = self._get_default_filled_region_type()
+            if fr_type is None:
+                log("Geen enkele FilledRegionType in dit project - "
+                    "Natura 2000-vlakken overgeslagen")
+                return
+            try:
+                fallback_naam = DB.Element.Name.__get__(fr_type)
+            except Exception:
+                fallback_naam = str(fr_type.Id)
+            log("FilledRegionType 'Natura2000' niet gevonden, "
+                "teruggevallen op '{0}'".format(fallback_naam))
 
         log("FilledRegionType: {0}".format(fr_type.Id))
 

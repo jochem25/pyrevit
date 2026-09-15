@@ -16,10 +16,10 @@ import json
 import time
 import os
 
-try:
-    import requests
-except ImportError:
-    requests = None
+# `requests` crasht op de IronPython-ssl-stack van pyRevit
+# (SystemError: bad ssl protocol type). http_compat biedt dezelfde aanroepen
+# bovenop urllib2 - zie lib/gis2bim/api/http_compat.py.
+from . import http_compat as requests
 
 
 # PDOK API Endpoints
@@ -114,9 +114,8 @@ class PDOKLocatie:
     """
     
     def __init__(self):
-        if requests is None:
-            raise ImportError("requests library required. pip install requests")
-    
+        pass
+
     def search_address(self, city, street, housenumber):
         """
         Zoek locatie op basis van adres.
@@ -381,8 +380,6 @@ class PDOKBGT:
     """
     
     def __init__(self, timeout=120):
-        if requests is None:
-            raise ImportError("requests library required")
         self.timeout = timeout
     
     def download_bbox(self, xmin, ymin, xmax, ymax, output_folder, 
@@ -553,9 +550,8 @@ class PDOKKadaster:
     # LAYER_NUMMERAANDUIDING bestaat NIET in v5 - gebruik BAG WFS
     
     def __init__(self):
-        if requests is None:
-            raise ImportError("requests library required. pip install requests")
-    
+        pass
+
     def _build_wfs_url(self, layer, bbox, max_features=10000):
         """Bouw WFS GetFeature URL."""
         # BBOX format: xmin,ymin,xmax,ymax,CRS (correct WFS 2.0 volgorde)
@@ -776,9 +772,8 @@ class PDOKWMTS:
     }
     
     def __init__(self):
-        if requests is None:
-            raise ImportError("requests library required")
-    
+        pass
+
     def get_aerial_image_url(self, xmin, ymin, xmax, ymax, 
                               width=2000, height=2000, layer="luchtfoto_actueel"):
         """

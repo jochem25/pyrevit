@@ -344,12 +344,28 @@ class WMSWindow(Window):
 
         desired_width_ft = bbox_size_m * METER_TO_FEET
 
+        # Verhouding vastzetten. Zonder LockProportions past Revit alleen de
+        # breedte aan en blijft de hoogte op de importwaarde staan: het beeld
+        # wordt dan platgedrukt met dezelfde factor als de schaalsprong.
+        try:
+            image_instance.LockProportions = True
+        except Exception as e:
+            log("LockProportions niet zetbaar: {0}".format(e))
+
         current_width = image_instance.Width
+        current_height = image_instance.Height
         if current_width > 0:
+            aspect = current_height / current_width
+            desired_height_ft = desired_width_ft * aspect
             scale_factor = desired_width_ft / current_width
             image_instance.Width = desired_width_ft
-            log("Image geschaald: {0:.1f}ft (was {1:.1f}ft, factor {2:.3f})".format(
-                desired_width_ft, current_width, scale_factor))
+            # Vangnet als LockProportions niet greep
+            if abs(image_instance.Height - desired_height_ft) > 0.001:
+                image_instance.Height = desired_height_ft
+            log("Image geschaald: {0:.1f}x{1:.1f}ft "
+                "(was {2:.1f}x{3:.1f}ft, factor {4:.3f}, viewschaal 1:{5})".format(
+                    image_instance.Width, image_instance.Height,
+                    current_width, current_height, scale_factor, view.Scale))
 
     def _show_result(self, loaded_count, errors):
         msg_lines = [

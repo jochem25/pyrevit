@@ -1,6 +1,6 @@
 # 3BM pyRevit Project - Status
 
-*Laatste update: 9 september 2026*
+*Laatste update: 15 september 2026*
 
 ---
 
@@ -39,22 +39,33 @@
 
 > **Kozijnstaat/Deurstaat gedeelde core (8 juni 2026):** `lib/kozijnstaat/` is nu profiel-aware (`load_config("kozijn"|"deur")`, eigen config-file per profiel, `element_category`). `family_collector` collect-functies nemen een `category`-param. Deurstaat-knoppen zijn dunne shims (`lib/kozijnstaat/shim.py`) die de Kozijnstaat-logica met `profile="deur"` draaien — geen code-duplicatie. GlasTag blijft raam-specifiek.
 
-### GIS2BIM.extension (12 tools)
+### GIS2BIM.extension (13 tools)
 
 | Tool | Panel | Status | Beschrijving |
 |------|-------|--------|--------------|
 | Locatie | Setup | Voltooid | Adres/postcode invoer, PDOK geocoding, Revit site locatie |
 | WFS | Data | Voltooid | Kadaster percelen, BAG huisnummers, gebouwen via PDOK WFS 2.0. 3BM-defaults (2 juli): 200×200m, view `GIS2BIM_kadaster`, lijnstijl `kadastrale_grens`, filled region `MLA_DP_90_pand`, tekst `3BM_2mm` — met fallback als naam ontbreekt |
-| BGT | Data | Voltooid | Basisregistratie Grootschalige Topografie (19 lagen, holes/donuts) |
-| AHN | Data | Actief | Hoogte data als TopographySurface (WCS/LAZ), texture scale validatie nodig |
-| BAG3D | Data | Voltooid | 3D gebouwen uit 3DBAG als DirectShape (OBJ mesh import) |
+| BGT | Data | Voltooid | Basisregistratie Grootschalige Topografie (19 lagen, holes/donuts). **15 sep:** paginering gerepareerd — PDOK gebruikt een cursor, niet `offset`; lagen werden stil op 1000 features afgekapt (pand: 1000 -> 1865) |
+| AHN | Data | Voltooid | Hoogte data als TopographySurface (WCS/LAZ). **15 sep: LAZ-modus gerepareerd** — tegelnamen misten voorloopnullen (`AHN5_C_78000_458000` i.p.v. `AHN5_C_078000_458000`), objectstore antwoordde daarop 403 omdat listing uit staat. Live: 7444 punten + luchtfoto-textuur |
+| BAG3D | Data | Voltooid | 3D gebouwen uit 3DBAG als DirectShape (OBJ mesh import). **15 sep:** WFS-laagnaam `BAG3D:Tiles` -> `BAG3D:tiles` (service hernoemd, gaf HTTP 400); OBJ-vertexsanitatie tegen spikes uit corrupte brondata |
 | Mesh3D | Data | Nieuw | 3D mesh import (OBJ/GLB), Google 3D Tiles (EEA-beperkt) |
 | NAPPeilmerken | Data | Voltooid | NAP peilmerken |
 | RegelsOpDeKaart | Data | **Nieuw** | Geldende regels op projectlocatie uit DSO-LV (Ozon Presenteren API v8, bron van Omgevingsloket "Regels op de kaart"). Vereist DSO API-key. Live-test pending (4 juli) |
-| WMS | Kaarten | Actief | Web Map Service kaarten op sheet |
+| WMS | Kaarten | Voltooid | Web Map Service kaarten op sheet. **15 sep:** `LockProportions` op ImageInstance — zonder die vlag paste Revit alleen de breedte aan en werden de ruimtelijke-plannenkaarten 9,4x platgedrukt |
 | LuchtfotoTijdreis | Kaarten | Actief | PDOK luchtfoto's tijdreeks op sheet (3x2 grid) |
 | KaartTijdreis | Kaarten | Todo | Historische kaarten tijdreeks |
-| StreetView | Kaarten | Actief | Street View toegang |
+| StreetView | Kaarten | Actief | Street View toegang. Geeft HTTP 403: Google API-key mist Street View Static API / billing |
+| OSM | Data | Voltooid | OpenStreetMap via Overpass API als filled regions. **15 sep:** tekent altijd in view `GIS2BIM_OSM` (wordt aangemaakt als hij ontbreekt); Overpass-retry (3x) omdat 504 Gateway Timeout eerder stil "0 filled regions" opleverde |
+
+> **HTTP-stack: geen `requests` meer (15 september 2026).** `requests` werkt niet in de
+> pyRevit IronPython 2.7-engine: urllib3 zet `OP_NO_SSLv2 | OP_NO_SSLv3 |
+> OP_NO_COMPRESSION | OP_NO_TICKET` op de SSL-context, de ssl-shim van IronPython kent
+> die constanten niet en laat ze bij het protocolnummer belanden ->
+> `SystemError: bad ssl protocol type: 50479106` (= 2 + 0x1000000 + 0x2000000 + 0x20000
+> + 0x4000). `wfs.py` gebruikt nu direct `urllib2`; `pdok.py` draait op
+> `lib/gis2bim/api/http_compat.py`, een urllib2-shim met dezelfde aanroepen als
+> `requests`. Die shim codeert ook URL's met spaties, wat `requests` stil voor je deed.
+> **Gebruik in nieuwe modules nooit `requests`.**
 
 ---
 

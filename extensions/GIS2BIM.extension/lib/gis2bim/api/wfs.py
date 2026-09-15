@@ -23,10 +23,22 @@ Gebruik:
 
 import json
 
+# Forceer TLS 1.2 voor PDOK (vereist op IronPython/.NET)
 try:
-    import requests
+    import clr
+    clr.AddReference("System")
+    from System.Net import ServicePointManager, SecurityProtocolType
+    ServicePointManager.SecurityProtocol = (
+        SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11
+    )
+except Exception:
+    pass
+
+try:
+    import urllib2
 except ImportError:
-    requests = None
+    # Python 3
+    import urllib.request as urllib2
 
 
 # PDOK Kadaster/IMGeo levert het 'hoek'-veld (o.a. OpenbareRuimteNaam) in
@@ -117,9 +129,16 @@ class WFSClient(object):
     """
 
     def __init__(self, timeout=30):
-        if requests is None:
-            raise ImportError("requests library required. pip install requests")
         self.timeout = timeout
+        self.user_agent = "GIS2BIM-pyRevit/1.0"
+
+    def _http_get(self, url):
+        """GET via urllib2 (requests werkt niet op de IronPython-ssl-stack)."""
+        request = urllib2.Request(url)
+        request.add_header("Accept", "application/json")
+        request.add_header("User-Agent", self.user_agent)
+        response = urllib2.urlopen(request, timeout=self.timeout)
+        return response.read().decode("utf-8")
 
     def get_features(self, layer, bbox, max_features=10000):
         """
@@ -136,17 +155,14 @@ class WFSClient(object):
         url = self._build_url(layer, bbox, max_features)
 
         try:
-            response = requests.get(url, timeout=self.timeout)
-            response.raise_for_status()
-
-            data = response.json()
+            data = json.loads(self._http_get(url))
             return self._parse_geojson(data, layer)
 
-        except requests.exceptions.RequestException as e:
-            print("WFS request error for {0}: {1}".format(layer.name, e))
-            return []
         except ValueError as e:
             print("WFS JSON parse error for {0}: {1}".format(layer.name, e))
+            return []
+        except Exception as e:
+            print("WFS request error for {0}: {1}".format(layer.name, e))
             return []
 
     def get_capabilities(self, wfs_url):
@@ -162,11 +178,8 @@ class WFSClient(object):
         url = "{0}?service=WFS&version=2.0.0&request=GetCapabilities".format(wfs_url)
 
         try:
-            response = requests.get(url, timeout=self.timeout)
-            response.raise_for_status()
-
             # Parse XML - eenvoudige string search voor FeatureType names
-            content = response.text
+            content = self._http_get(url)
             layers = []
 
             # Zoek naar <Name> tags binnen <FeatureType> blokken

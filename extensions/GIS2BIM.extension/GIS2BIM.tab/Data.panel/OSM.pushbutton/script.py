@@ -51,7 +51,7 @@ if lib_path not in sys.path:
 from bm_logger import get_logger
 from gis2bim.ui.xaml_helper import load_xaml_window, bind_ui_elements
 from gis2bim.ui.location_setup import setup_project_location
-from gis2bim.ui.view_setup import populate_view_dropdown, get_selected_view
+from gis2bim.ui.view_setup import find_view_by_name, get_or_create_plan_view
 from gis2bim.ui.progress_panel import show_progress, hide_progress, update_ui
 from gis2bim.revit.geometry import rd_to_revit_xyz
 from gis2bim.coordinates import rd_to_wgs84, wgs84_to_rd
@@ -79,6 +79,9 @@ except ImportError as e:
 class OSMWindow(Window):
     """WPF Window voor OSM data laden."""
 
+    # OSM tekent altijd in deze view - geen keuze, geen verrassingen
+    OSM_VIEW_NAME = "GIS2BIM_OSM"
+
     def __init__(self, doc):
         Window.__init__(self)
         self.doc = doc
@@ -93,14 +96,33 @@ class OSMWindow(Window):
             'pnl_no_location', 'cmb_bbox_size',
             'chk_building', 'chk_landuse', 'chk_natural',
             'chk_water', 'chk_amenity', 'chk_leisure',
-            'cmb_view',
+            'txt_view',
             'pnl_progress', 'txt_progress', 'progress_bar',
             'txt_status', 'btn_cancel', 'btn_execute'
         ])
 
         self.location_rd = setup_project_location(self, doc, log)
-        populate_view_dropdown(self.cmb_view, doc, log=log)
+        self.txt_view.Text = self.OSM_VIEW_NAME
         self._bind_events()
+
+    def _ensure_osm_view(self):
+        """OSM tekent altijd in GIS2BIM_OSM; maak hem aan als die ontbreekt."""
+        view = find_view_by_name(self.doc, self.OSM_VIEW_NAME)
+        if view is not None:
+            log("View: {0}".format(self.OSM_VIEW_NAME))
+            return view
+
+        with revit.Transaction("GIS2BIM - view {0} aanmaken".format(
+                self.OSM_VIEW_NAME)):
+            view = get_or_create_plan_view(
+                self.doc, self.OSM_VIEW_NAME, log=log)
+
+        if view is None:
+            raise ValueError(
+                "View '{0}' bestaat niet en kon niet aangemaakt worden. "
+                "Controleer of het project een Level en een "
+                "plattegrond-viewtype heeft.".format(self.OSM_VIEW_NAME))
+        return view
 
     def _bind_events(self):
         self.btn_cancel.Click += self._on_cancel
@@ -185,11 +207,7 @@ class OSMWindow(Window):
         selected_layers = self._get_selected_layers()
         log("Geselecteerde layers: {0}".format(selected_layers))
 
-        view = get_selected_view(self.cmb_view, self.doc)
-        if not view:
-            raise ValueError("Geen view geselecteerd")
-
-        log("View: {0}".format(view.Name))
+        view = self._ensure_osm_view()
 
         # Verzamel alle layer objecten
         layer_objects = []
@@ -219,6 +237,14 @@ class OSMWindow(Window):
             all_query_tags,
             as_polygon=True
         )
+
+        if not all_raw_features and client.laatste_fout is not None:
+            raise ValueError(
+                "Overpass API niet bereikbaar: {0}\n\n"
+                "overpass-api.de is een gedeelde dienst die bij drukte "
+                "tijdelijk 504 geeft. Er is al 3x opnieuw geprobeerd; "
+                "probeer het over een minuut nog eens.".format(
+                    client.laatste_fout))
 
         log("Totaal features ontvangen: {0}".format(len(all_raw_features)))
 

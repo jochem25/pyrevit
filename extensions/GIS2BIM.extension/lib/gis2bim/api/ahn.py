@@ -180,7 +180,11 @@ class AHNClient(object):
         while x <= x_end:
             y = y_start
             while y <= y_end:
-                filename = "AHN5_C_{0}_{1}.COPC.LAZ".format(x, y)
+                # De RD-coordinaten staan in de bestandsnaam met NULLEN
+                # OPGEVULD tot 6 cijfers: AHN5_C_078000_458000.COPC.LAZ.
+                # Zonder opvulling bestaat de key niet en antwoordt de
+                # objectstore 403 (geen ListBucket-recht) i.p.v. 404.
+                filename = "AHN5_C_{0:06d}_{1:06d}.COPC.LAZ".format(x, y)
                 url = "{0}/{1}".format(self.LAZ_BASE_URL, filename)
                 tile_bbox = (x, y, x + self.TILE_SIZE, y + self.TILE_SIZE)
                 tiles.append((url, filename, tile_bbox))
@@ -436,6 +440,17 @@ class AHNClient(object):
             raise AHNError(
                 "AHN data niet gevonden voor dit gebied. "
                 "Controleer of de locatie in Nederland ligt."
+            )
+        elif "403" in str(e) or "forbidden" in error_str:
+            # De objectstore staat geen bucket-listing toe. Een key die niet
+            # bestaat geeft daardoor 403 AccessDenied in plaats van 404 - een
+            # 403 betekent hier dus "deze tegel bestaat niet", niet "geen
+            # toegang". AHN5 dekt nog niet heel Nederland.
+            raise AHNError(
+                "Geen AHN5-puntenwolk voor deze tegel.\n\n"
+                "De objectstore geeft 403 voor een niet-bestaande tegel. "
+                "AHN5 is nog niet landsdekkend; gebruik de WCS-modus "
+                "(GeoTIFF) voor DTM/DSM op 0,5 m."
             )
         else:
             raise AHNError(

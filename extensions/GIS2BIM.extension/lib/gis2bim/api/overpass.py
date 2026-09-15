@@ -20,6 +20,7 @@ Gebruik:
 """
 
 import json
+import time
 
 try:
     import urllib2
@@ -68,6 +69,13 @@ class OverpassClient(object):
 
     OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
+    # overpass-api.de is een gedeelde gratis dienst die onder druk
+    # load-shedt met 504 Gateway Timeout. Dat is tijdelijk: dezelfde query
+    # slaagt seconden later wel. Zonder retry zag de gebruiker alleen
+    # "0 filled regions" zonder dat er iets mis was met de query.
+    MAX_POGINGEN = 3
+    WACHT_SECONDEN = (2, 5)
+
     def __init__(self, timeout=30, log_func=None):
         """
         Initialiseer de client.
@@ -78,6 +86,9 @@ class OverpassClient(object):
         """
         self.timeout = timeout
         self._log = log_func or (lambda msg: None)
+        # Laatste netwerkfout, zodat de aanroeper onderscheid kan maken
+        # tussen "server onbereikbaar" en "gebied bevat niets".
+        self.laatste_fout = None
 
     def get_features(self, bbox_wgs84, query_tags, as_polygon=True):
         """
@@ -208,28 +219,48 @@ class OverpassClient(object):
         return pois
 
     def _execute_query(self, query):
-        """Voer een Overpass QL query uit via HTTP POST."""
-        try:
-            self._log("Overpass query ({0} tekens)".format(len(query)))
+        """Voer een Overpass QL query uit via HTTP POST, met retry.
 
-            post_data = urlencode({"data": query})
-            # IronPython 2.7: encode to bytes
-            if hasattr(post_data, 'encode'):
-                post_data = post_data.encode("utf-8")
+        Returns:
+            Geparste JSON dict, of None als alle pogingen faalden.
+        """
+        self._log("Overpass query ({0} tekens)".format(len(query)))
 
-            request = urllib2.Request(self.OVERPASS_URL, data=post_data)
-            request.add_header("User-Agent", "GIS2BIM-pyRevit/1.0")
-            request.add_header("Content-Type",
-                               "application/x-www-form-urlencoded")
+        post_data = urlencode({"data": query})
+        # IronPython 2.7: encode to bytes
+        if hasattr(post_data, 'encode'):
+            post_data = post_data.encode("utf-8")
 
-            response = urllib2.urlopen(request, timeout=self.timeout + 15)
-            text = response.read().decode("utf-8")
-            self._log("Response ontvangen: {0} bytes".format(len(text)))
-            return json.loads(text)
+        laatste_fout = None
 
-        except Exception as e:
-            self._log("Overpass API error: {0}".format(e))
-            return None
+        for poging in range(1, self.MAX_POGINGEN + 1):
+            try:
+                request = urllib2.Request(self.OVERPASS_URL, data=post_data)
+                request.add_header("User-Agent", "GIS2BIM-pyRevit/1.0")
+                request.add_header("Content-Type",
+                                   "application/x-www-form-urlencoded")
+
+                response = urllib2.urlopen(request, timeout=self.timeout + 15)
+                text = response.read().decode("utf-8")
+                self._log("Response ontvangen: {0} bytes (poging {1})".format(
+                    len(text), poging))
+                return json.loads(text)
+
+            except Exception as e:
+                laatste_fout = e
+                self._log("Overpass poging {0}/{1} mislukt: {2}".format(
+                    poging, self.MAX_POGINGEN, e))
+
+                if poging < self.MAX_POGINGEN:
+                    wacht = self.WACHT_SECONDEN[
+                        min(poging - 1, len(self.WACHT_SECONDEN) - 1)]
+                    self._log("Opnieuw over {0}s...".format(wacht))
+                    time.sleep(wacht)
+
+        self._log("Overpass API onbereikbaar na {0} pogingen: {1}".format(
+            self.MAX_POGINGEN, laatste_fout))
+        self.laatste_fout = laatste_fout
+        return None
 
     def _parse_response_geom(self, data, as_polygon):
         """

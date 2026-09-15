@@ -40,30 +40,41 @@
             <Border Background="{DynamicResource LightGrayBrush}"
                     CornerRadius="4" Padding="16" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="Wat verwijderen?"
-                               Style="{DynamicResource SectionHeader}"/>
+                    <DockPanel Margin="0,0,0,8">
+                        <Button x:Name="btn_toggle_all"
+                                DockPanel.Dock="Right"
+                                Content="Alles uit"
+                                Style="{DynamicResource SecondaryButton}"
+                                FontSize="11" Padding="10,2"
+                                MinWidth="72"
+                                VerticalAlignment="Top"/>
+                        <TextBlock Text="Wat verwijderen?"
+                                   Style="{DynamicResource SectionHeader}"
+                                   Margin="0"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
 
                     <CheckBox x:Name="chk_images" IsChecked="True"
                               Style="{DynamicResource StandardCheckBox}"
                               Content="Rasterafbeeldingen (behoud 'legend')"
                               Margin="0,0,0,8"/>
-                    <CheckBox x:Name="chk_regions"
+                    <CheckBox x:Name="chk_regions" IsChecked="True"
                               Style="{DynamicResource StandardCheckBox}"
                               Content="Filled regions"
                               Margin="0,0,0,8"/>
-                    <CheckBox x:Name="chk_lines"
+                    <CheckBox x:Name="chk_lines" IsChecked="True"
                               Style="{DynamicResource StandardCheckBox}"
                               Content="Detail lijnen"
                               Margin="0,0,0,8"/>
-                    <CheckBox x:Name="chk_text"
+                    <CheckBox x:Name="chk_text" IsChecked="True"
                               Style="{DynamicResource StandardCheckBox}"
                               Content="Tekstnotities"
                               Margin="0,0,0,8"/>
-                    <CheckBox x:Name="chk_detailgroups"
+                    <CheckBox x:Name="chk_detailgroups" IsChecked="True"
                               Style="{DynamicResource StandardCheckBox}"
                               Content="Detail groepen"
                               Margin="0,0,0,8"/>
-                    <CheckBox x:Name="chk_detailcomp"
+                    <CheckBox x:Name="chk_detailcomp" IsChecked="True"
                               Style="{DynamicResource StandardCheckBox}"
                               Content="Detail componenten"
                               Margin="0,0,0,0"/>

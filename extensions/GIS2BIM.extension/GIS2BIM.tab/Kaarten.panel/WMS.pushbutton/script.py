@@ -46,6 +46,9 @@ from bm_logger import get_logger
 from gis2bim.ui.xaml_helper import load_xaml_window, bind_ui_elements
 from gis2bim.ui.location_setup import setup_project_location
 from gis2bim.ui.progress_panel import show_progress, hide_progress, update_ui
+from gis2bim.ui.view_setup import (
+    find_view_by_name, create_gis2bim_plan_view
+)
 
 log = get_logger("WMS")
 
@@ -186,15 +189,21 @@ class WMSWindow(Window):
 
                     show_progress(self, "Laden: {0}...".format(layer_name))
 
-                    view = self._find_view(view_name)
+                    view = find_view_by_name(self.doc, view_name, log=log)
                     if view is None and create_views:
-                        view = self._create_floor_plan(view_name)
-                        if view:
-                            log("View aangemaakt: {0}".format(view_name))
+                        meldingen = []
+                        view = create_gis2bim_plan_view(
+                            self.doc, view_name, log=log, warnings=meldingen)
+                        for melding in meldingen:
+                            errors.append("{0}: {1}".format(
+                                layer_name, melding))
+                        if view is None:
+                            continue
                     elif view is None:
                         errors.append("{0}: view '{1}' niet gevonden".format(
                             layer_name, view_name))
                         continue
+                    view_name = view.Name
 
                     show_progress(self, "Downloaden: {0}...".format(layer_name))
 
@@ -262,57 +271,6 @@ class WMSWindow(Window):
         if item and hasattr(item, 'Tag'):
             return int(item.Tag)
         return 500
-
-    def _find_view(self, view_name):
-        collector = DB.FilteredElementCollector(self.doc)
-        views = collector.OfClass(DB.View).ToElements()
-
-        for view in views:
-            if view.IsTemplate:
-                continue
-            try:
-                if view.Name == view_name:
-                    return view
-            except Exception:
-                pass
-        return None
-
-    def _create_floor_plan(self, view_name):
-        try:
-            collector = DB.FilteredElementCollector(self.doc)
-            vfts = collector.OfClass(DB.ViewFamilyType).ToElements()
-
-            floor_plan_type = None
-            for vft in vfts:
-                if vft.ViewFamily == DB.ViewFamily.FloorPlan:
-                    floor_plan_type = vft
-                    break
-
-            if floor_plan_type is None:
-                log("Geen FloorPlan ViewFamilyType gevonden")
-                return None
-
-            level_collector = DB.FilteredElementCollector(self.doc)
-            levels = level_collector.OfClass(DB.Level).ToElements()
-
-            if not levels:
-                log("Geen Levels gevonden")
-                return None
-
-            level = levels[0]
-
-            new_view = DB.ViewPlan.Create(
-                self.doc, floor_plan_type.Id, level.Id
-            )
-            new_view.Name = view_name
-
-            log("FloorPlan aangemaakt: {0}".format(view_name))
-            return new_view
-
-        except Exception as e:
-            log("Fout bij aanmaken view: {0}".format(e))
-            log(traceback.format_exc())
-            return None
 
     def _remove_existing_images(self, view, view_name):
         try:

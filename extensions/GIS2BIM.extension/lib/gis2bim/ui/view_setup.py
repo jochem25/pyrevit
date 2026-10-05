@@ -101,29 +101,218 @@ def get_selected_view(combo, doc):
     return None
 
 
-def find_view_by_name(doc, view_name):
-    """Zoek een niet-template view op exacte naam.
+# Standaard voor alle vaste GIS2BIM-views: naam in kleine letters, view
+# template MLA_SITUATIE_01_1/1000 en dezelfde crop als de bestaande
+# GIS2BIM-views in de template (A3-vlak op 1:1000).
+GIS2BIM_VIEW_PREFIX = "gis2bim"
+GIS2BIM_VIEW_TEMPLATE = "MLA_SITUATIE_01_1/1000"
+
+
+def _view_name(view):
+    try:
+        return view.Name
+    except Exception:
+        return None
+
+
+def find_view_by_name(doc, view_name, log=None):
+    """Zoek een niet-template view op naam, hoofdletterongevoelig.
+
+    Een exacte match wint. Anders telt een match zonder hoofdlettergebruik
+    (GIS2BIM_luchtfoto == gis2bim_luchtfoto). Zijn er meerdere, dan wint de
+    view met een view template en wordt de dubbeling gelogd.
 
     Args:
         doc: Revit Document
-        view_name: Exacte viewnaam
+        view_name: Viewnaam
+        log: Optionele logfunctie
 
     Returns:
         View element, of None
     """
+    if log is None:
+        log = lambda msg: None
+
+    gezocht = view_name.lower()
+    exact = None
+    kandidaten = []
     for view in DB.FilteredElementCollector(doc).OfClass(DB.View):
         if view.IsTemplate:
             continue
-        try:
-            if view.Name == view_name:
-                return view
-        except Exception:
-            pass
+        naam = _view_name(view)
+        if naam is None:
+            continue
+        if naam == view_name:
+            exact = view
+        elif naam.lower() == gezocht:
+            kandidaten.append(view)
+
+    if exact is not None:
+        return exact
+    if not kandidaten:
+        return None
+    if len(kandidaten) > 1:
+        log("Meerdere views heten '{0}' (hoofdletters genegeerd): {1}".format(
+            view_name, ", ".join(_view_name(v) for v in kandidaten)))
+        met_template = [v for v in kandidaten
+                        if v.ViewTemplateId != DB.ElementId.InvalidElementId]
+        if met_template:
+            return met_template[0]
+    return kandidaten[0]
+
+
+def find_view_template(doc, template_name):
+    """Zoek een view template op exacte naam. Returns View of None."""
+    for view in DB.FilteredElementCollector(doc).OfClass(DB.View):
+        if view.IsTemplate and _view_name(view) == template_name:
+            return view
     return None
 
 
-def get_or_create_plan_view(doc, view_name, log=None):
-    """Haal een plattegrond met deze naam op, of maak hem aan.
+def _find_reference_view(doc, template):
+    """Bestaande GIS2BIM-plattegrond waarvan crop en level overgenomen worden.
+
+    Kiest uit de plattegronden met 'gis2bim' in de naam, actieve crop en een
+    niet-gedraaide cropbox (bij voorkeur met dezelfde view template) de
+    cropmaat die het vaakst voorkomt.
+    """
+    kandidaten = []
+    for view in DB.FilteredElementCollector(doc).OfClass(DB.ViewPlan):
+        if view.IsTemplate or not view.CropBoxActive:
+            continue
+        naam = _view_name(view)
+        if not naam or GIS2BIM_VIEW_PREFIX not in naam.lower():
+            continue
+        try:
+            if not view.CropBox.Transform.IsIdentity:
+                continue
+        except Exception:
+            continue
+        kandidaten.append(view)
+
+    if template is not None:
+        met_template = [v for v in kandidaten
+                        if v.ViewTemplateId == template.Id]
+        if met_template:
+            kandidaten = met_template
+    if not kandidaten:
+        return None
+
+    def sleutel(view):
+        box = view.CropBox
+        return (round(box.Min.X, 2), round(box.Min.Y, 2),
+                round(box.Max.X, 2), round(box.Max.Y, 2))
+
+    telling = {}
+    for view in kandidaten:
+        k = sleutel(view)
+        telling[k] = telling.get(k, 0) + 1
+    beste = max(telling, key=lambda k: telling[k])
+    for view in kandidaten:
+        if sleutel(view) == beste:
+            return view
+    return None
+
+
+def _lowest_level(doc):
+    levels = list(DB.FilteredElementCollector(doc).OfClass(DB.Level))
+    if not levels:
+        return None
+    levels.sort(key=lambda lv: lv.Elevation)
+    return levels[0]
+
+
+def _floor_plan_type(doc):
+    for vft in DB.FilteredElementCollector(doc).OfClass(DB.ViewFamilyType):
+        if vft.ViewFamily == DB.ViewFamily.FloorPlan:
+            return vft
+    return None
+
+
+def create_gis2bim_plan_view(doc, view_name, log=None, warnings=None):
+    """Maak een GIS2BIM-plattegrond volgens de standaard.
+
+    Naam in kleine letters, level en crop van een bestaande GIS2BIM-view,
+    view template GIS2BIM_VIEW_TEMPLATE. Wat niet lukt komt in `warnings`
+    (en in de log), zodat de tool het aan de gebruiker kan melden.
+
+    De aanroeper moet ZELF een transactie open hebben staan.
+
+    Returns:
+        View element, of None als aanmaken niet lukte
+    """
+    if log is None:
+        log = lambda msg: None
+    if warnings is None:
+        warnings = []
+
+    def meld(msg):
+        log(msg)
+        warnings.append(msg)
+
+    view_name = view_name.lower()
+
+    vft = _floor_plan_type(doc)
+    if vft is None:
+        meld("Geen FloorPlan ViewFamilyType - view '{0}' niet "
+             "aangemaakt".format(view_name))
+        return None
+
+    template = find_view_template(doc, GIS2BIM_VIEW_TEMPLATE)
+    referentie = _find_reference_view(doc, template)
+
+    level = None
+    if referentie is not None and referentie.GenLevel is not None:
+        level = referentie.GenLevel
+    if level is None:
+        level = _lowest_level(doc)
+    if level is None:
+        meld("Geen Level in dit project - view '{0}' niet "
+             "aangemaakt".format(view_name))
+        return None
+
+    try:
+        view = DB.ViewPlan.Create(doc, vft.Id, level.Id)
+        view.Name = view_name
+    except Exception as e:
+        meld("Aanmaken view '{0}' mislukt: {1}".format(view_name, e))
+        return None
+
+    if template is not None:
+        try:
+            view.ViewTemplateId = template.Id
+        except Exception as e:
+            meld("View template '{0}' niet toe te passen op '{1}': "
+                 "{2}".format(GIS2BIM_VIEW_TEMPLATE, view_name, e))
+    else:
+        meld("View template '{0}' bestaat niet - '{1}' heeft geen "
+             "template".format(GIS2BIM_VIEW_TEMPLATE, view_name))
+        if referentie is not None:
+            try:
+                view.Scale = referentie.Scale
+            except Exception:
+                pass
+
+    if referentie is not None:
+        try:
+            view.CropBoxActive = True
+            view.CropBox = referentie.CropBox
+        except Exception as e:
+            meld("Crop van '{0}' niet over te nemen op '{1}': {2}".format(
+                _view_name(referentie), view_name, e))
+    else:
+        meld("Geen bestaande GIS2BIM-view met crop gevonden - '{0}' "
+             "heeft geen standaard-crop".format(view_name))
+
+    log("View aangemaakt: {0} (level '{1}', template {2}, crop van {3})".format(
+        view_name, level.Name,
+        GIS2BIM_VIEW_TEMPLATE if template is not None else "-",
+        _view_name(referentie) if referentie is not None else "-"))
+    return view
+
+
+def get_or_create_plan_view(doc, view_name, log=None, warnings=None):
+    """Haal een GIS2BIM-view op (hoofdletterongevoelig) of maak hem aan.
 
     Voor tools die altijd in hun eigen vaste view tekenen. De aanroeper
     moet ZELF een transactie open hebben staan wanneer de view mogelijk
@@ -131,8 +320,9 @@ def get_or_create_plan_view(doc, view_name, log=None):
 
     Args:
         doc: Revit Document
-        view_name: Naam van de view (bijv. "GIS2BIM_OSM")
+        view_name: Naam van de view, kleine letters (bijv. "gis2bim_osm")
         log: Optionele logfunctie
+        warnings: Optionele lijst waar meldingen aan toegevoegd worden
 
     Returns:
         View element, of None als aanmaken niet lukte
@@ -140,36 +330,24 @@ def get_or_create_plan_view(doc, view_name, log=None):
     if log is None:
         log = lambda msg: None
 
-    view = find_view_by_name(doc, view_name)
+    view = find_view_by_name(doc, view_name, log=log)
     if view is not None:
-        log("View gevonden: {0}".format(view_name))
+        log("View gevonden: {0}".format(_view_name(view)))
         return view
+    return create_gis2bim_plan_view(doc, view_name, log=log,
+                                    warnings=warnings)
 
-    try:
-        vft = None
-        for kandidaat in DB.FilteredElementCollector(doc).OfClass(
-                DB.ViewFamilyType):
-            if kandidaat.ViewFamily == DB.ViewFamily.FloorPlan:
-                vft = kandidaat
-                break
-        if vft is None:
-            log("Geen FloorPlan ViewFamilyType in dit project")
-            return None
 
-        levels = list(DB.FilteredElementCollector(doc).OfClass(DB.Level))
-        if not levels:
-            log("Geen Level in dit project - view kan niet aangemaakt worden")
-            return None
+def select_view_in_dropdown(combo, view_name):
+    """Selecteer een view in een gevulde dropdown, hoofdletterongevoelig.
 
-        # Laagste level: daar ligt het maaiveld/GIS-materiaal
-        levels.sort(key=lambda lv: lv.Elevation)
-
-        view = DB.ViewPlan.Create(doc, vft.Id, levels[0].Id)
-        view.Name = view_name
-        log("View aangemaakt: {0} (level '{1}')".format(
-            view_name, levels[0].Name))
-        return view
-
-    except Exception as e:
-        log("Aanmaken view '{0}' mislukt: {1}".format(view_name, e))
-        return None
+    Returns:
+        True bij een match
+    """
+    gezocht = view_name.lower()
+    for i in range(combo.Items.Count):
+        content = combo.Items[i].Content
+        if content is not None and str(content).lower() == gezocht:
+            combo.SelectedIndex = i
+            return True
+    return False

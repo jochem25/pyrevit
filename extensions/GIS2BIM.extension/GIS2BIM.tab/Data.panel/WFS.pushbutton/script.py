@@ -41,7 +41,9 @@ if lib_path not in sys.path:
 from bm_logger import get_logger
 from gis2bim.ui.xaml_helper import load_xaml_window, bind_ui_elements
 from gis2bim.ui.location_setup import setup_project_location
-from gis2bim.ui.view_setup import populate_view_dropdown, get_selected_view
+from gis2bim.ui.view_setup import (
+    populate_view_dropdown, get_selected_view, select_view_in_dropdown
+)
 from gis2bim.ui.progress_panel import show_progress, hide_progress, update_ui
 
 log = get_logger("WFS")
@@ -49,7 +51,7 @@ log = get_logger("WFS")
 # Default selecties in de dialog (3BM template-namen).
 # Bestaat de naam niet in het project, dan valt de dropdown
 # terug op de bestaande default (actieve view / <Thin Lines> / eerste item).
-DEFAULT_VIEW_NAME = "GIS2BIM_kadaster"
+DEFAULT_VIEW_NAME = "gis2bim_kadaster"
 DEFAULT_LINE_STYLE = "kadastrale_grens"
 DEFAULT_FILLED_REGION = "MLA_DP_90_pand"
 DEFAULT_TEXT_TYPE = "3BM_2mm"
@@ -118,7 +120,7 @@ class WFSWindow(Window):
 
         self.location_rd = setup_project_location(self, doc, log)
         populate_view_dropdown(self.cmb_view, doc, log=log)
-        select_combo_item_by_name(self.cmb_view, DEFAULT_VIEW_NAME)
+        select_view_in_dropdown(self.cmb_view, DEFAULT_VIEW_NAME)
         self._setup_styles()
         self._bind_events()
 

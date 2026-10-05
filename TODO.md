@@ -73,6 +73,43 @@ foto, dezelfde foto binnen 15 min kost niets extra.
 
 ---
 
+## GIS2BIM — viewnamen kleine letters + views aanmaken (5 oktober 2026)
+
+> Aanleiding: WMS plaatste beelden in verkeerde/nieuwe views (exacte, hoofdlettergevoelige
+> naamvergelijking; namen in code wijken af van de template). Besluit Jochem: alle GIS2BIM-views
+> in kleine letters, gelijk aan de code; ontbrekende view aanmaken.
+
+**Gedaan:**
+- `lib/gis2bim/ui/view_setup.py`: `find_view_by_name` hoofdletterongevoelig (exact wint; bij
+  dubbeling wint de view met template, gelogd); `create_gis2bim_plan_view` maakt de view met
+  template `MLA_SITUATIE_01_1/1000` en neemt crop + level over van de meest voorkomende
+  GIS2BIM-view (A3 op 1:1000: X -209989..209980, Y -148497..148489 mm). Wat niet lukt wordt
+  gemeld in de eindmelding van de tool.
+- WMS-viewnamen (`api/wms.py`) = de bestaande kleine-letternamen uit de master
+  (`gis2bim_ruimtelijkeplannen_*`, `gis2bim_geluidscontouren_*`, `gis2bim_luchtvervuiling_*`,
+  `gis2bim_risico_*`, ...). OSM -> `gis2bim_osm`, WFS-default -> `gis2bim_kadaster`.
+- Master `GIS2BIM_25_v1.rvt`: 20 views hernoemd naar kleine letters (dry run eerst, teruggelezen,
+  opgeslagen door Jochem 11:46). Centralpad stond nog op de oude 3BM-NAS (`\\Driebm-nas\...`);
+  daardoor faalde lenen en werd de eerste run teruggerold. Jochem heeft de master opnieuw als
+  central opgeslagen op `D:\KBA_projecten\000_revit\70_GIS2BIM\`. Backup:
+  `D:\opruimactie\GIS2BIM_25_v1_backup_20261005_viewnamen`.
+- Proef op een detached kopie (`D:\opruimactie\GIS2BIM_proef_20261005`): 18/18 WMS-lagen in de
+  juiste view, met template, 1:1000 en standaard-crop.
+
+**Open — beslissing Jochem (dubbelingen in de master, NIET verwijderd):**
+- [ ] `GIS2BIM_luchtfoto` (sheet 000) naast `gis2bim_luchtfoto` (geen sheet, 1 oud WMS-beeld)
+- [ ] `GIS2BIM_dijkbeschermingszone` (sheet 021) naast `gis2bim_dijkbeschermingszone`
+- [ ] `GIS2BIM_WOZ` (sheet REAL_006) naast `gis2bim_woz`; `GIS2BIM_waterwin` (REAL_015) naast `gis2bim_waterwin`
+- [ ] `GIS2BIM_geurhinder_openhaarden` / `gis2bim_geurhinder_openhaarden`; `GIS2BIM_natura2000` / `gis2bim_natura2000`
+- [ ] `gis2bim_risico_funderingsproblematiek` (sheet 022) naast `gis2bim_risico_Funderingsproblematiek`
+- [ ] Restant oude WMS-run in master: `gis2bim_enkelbestemming` (geen template, 1:100, 1 beeld)
+- [ ] `gis2bim_risico_transportroutes` bestaat niet in de master (wordt aangemaakt); is
+  `gis2bim_risico_pr_contour` hiervoor bedoeld?
+- [ ] Na opruimen dubbelingen: hoofdletterversies hernoemen (zelfde script, raakt dan alles).
+- [ ] WMS-knop zelf in Revit draaien na Reload (proef ging via de bridge met dezelfde lib-functies).
+
+---
+
 ## GIS2BIM — knopsessie 15 september 2026 (10 fixes, deels nog niet in Revit getest)
 
 > Knop-voor-knop doorlopen met de gebruiker op `GIS2BIM_25_v1` (Zeekant 37, Den Haag, RD 78653/458298). Alle diagnoses zijn tegen de live endpoints geverifieerd; wat in Revit is bevestigd staat hieronder apart.

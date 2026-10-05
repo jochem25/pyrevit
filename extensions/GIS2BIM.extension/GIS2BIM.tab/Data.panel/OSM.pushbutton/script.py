@@ -80,7 +80,7 @@ class OSMWindow(Window):
     """WPF Window voor OSM data laden."""
 
     # OSM tekent altijd in deze view - geen keuze, geen verrassingen
-    OSM_VIEW_NAME = "GIS2BIM_OSM"
+    OSM_VIEW_NAME = "gis2bim_osm"
 
     def __init__(self, doc):
         Window.__init__(self)
@@ -106,10 +106,10 @@ class OSMWindow(Window):
         self._bind_events()
 
     def _ensure_osm_view(self):
-        """OSM tekent altijd in GIS2BIM_OSM; maak hem aan als die ontbreekt."""
-        view = find_view_by_name(self.doc, self.OSM_VIEW_NAME)
+        """OSM tekent altijd in gis2bim_osm; maak hem aan als die ontbreekt."""
+        view = find_view_by_name(self.doc, self.OSM_VIEW_NAME, log=log)
         if view is not None:
-            log("View: {0}".format(self.OSM_VIEW_NAME))
+            log("View: {0}".format(view.Name))
             return view
 
         with revit.Transaction("GIS2BIM - view {0} aanmaken".format(

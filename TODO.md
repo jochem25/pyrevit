@@ -96,17 +96,21 @@ foto, dezelfde foto binnen 15 min kost niets extra.
 - Proef op een detached kopie (`D:\opruimactie\GIS2BIM_proef_20261005`): 18/18 WMS-lagen in de
   juiste view, met template, 1:1000 en standaard-crop.
 
-**Open — beslissing Jochem (dubbelingen in de master, NIET verwijderd):**
-- [ ] `GIS2BIM_luchtfoto` (sheet 000) naast `gis2bim_luchtfoto` (geen sheet, 1 oud WMS-beeld)
-- [ ] `GIS2BIM_dijkbeschermingszone` (sheet 021) naast `gis2bim_dijkbeschermingszone`
-- [ ] `GIS2BIM_WOZ` (sheet REAL_006) naast `gis2bim_woz`; `GIS2BIM_waterwin` (REAL_015) naast `gis2bim_waterwin`
-- [ ] `GIS2BIM_geurhinder_openhaarden` / `gis2bim_geurhinder_openhaarden`; `GIS2BIM_natura2000` / `gis2bim_natura2000`
-- [ ] `gis2bim_risico_funderingsproblematiek` (sheet 022) naast `gis2bim_risico_Funderingsproblematiek`
-- [ ] Restant oude WMS-run in master: `gis2bim_enkelbestemming` (geen template, 1:100, 1 beeld)
-- [ ] `gis2bim_risico_transportroutes` bestaat niet in de master (wordt aangemaakt); is
-  `gis2bim_risico_pr_contour` hiervoor bedoeld?
-- [ ] Na opruimen dubbelingen: hoofdletterversies hernoemen (zelfde script, raakt dan alles).
-- [ ] WMS-knop zelf in Revit draaien na Reload (proef ging via de bridge met dezelfde lib-functies).
+- Master, dubbelingen (akkoord Jochem): 8 kleine-letterduplicaten zonder sheet en zonder beeld
+  verwijderd (incl. `gis2bim_risico_Funderingsproblematiek` en restant `gis2bim_enkelbestemming`),
+  6 hoofdletterversies hernoemd. Master: 43 GIS2BIM-views, geen hoofdletters meer.
+- Project `GIS2BIM_25_v1_jochemKBA`: 19 views hernoemd; `gis2bim_transportroutes` ->
+  `gis2bim_risico_transportroutes` met template + standaard-crop. Dubbelingen en de views van de
+  WMS-run van 11:02 bewust blijven staan.
+
+**Open:**
+- [ ] Jochem: master opslaan/synchroniseren, project synchroniseren.
+- [ ] Project: na pyRevit-Reload WMS opnieuw draaien (beelden landen dan in de templateviews; dit is
+  meteen de test van de knop zelf); daarna beslissen over de lege 11:02-views
+  (`gis2bim_bouwvlak`, `_dubbelbestemming`, `_enkelbestemming`, `_overstromingsrisico`,
+  `_pr_contour`, `_dijkbescherming`) en de 7 dubbelingen in het project (zelfde aanpak als master).
+- [ ] Is `gis2bim_risico_pr_contour` bedoeld voor transportroutes (Basisnet)? Nu maakt de tool
+  `gis2bim_risico_transportroutes` aan.
 
 ---
 

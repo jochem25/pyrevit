@@ -109,8 +109,12 @@ foto, dezelfde foto binnen 15 min kost niets extra.
   meteen de test van de knop zelf); daarna beslissen over de lege 11:02-views
   (`gis2bim_bouwvlak`, `_dubbelbestemming`, `_enkelbestemming`, `_overstromingsrisico`,
   `_pr_contour`, `_dijkbescherming`) en de 7 dubbelingen in het project (zelfde aanpak als master).
-- [ ] Is `gis2bim_risico_pr_contour` bedoeld voor transportroutes (Basisnet)? Nu maakt de tool
-  `gis2bim_risico_transportroutes` aan.
+- [x] Besluit Jochem 05-10: `gis2bim_risico_pr_contour` is voor ALLE transport met PR 10-6. WMS-key
+  `transportroutes` (rev_public:bn_pr10_6) -> `gis2bim_risico_pr_contour`; `pr_contour_ev` blijft
+  `gis2bim_risico_pr_contour_ev`. `gis2bim_risico_transportroutes` wordt niet meer aangemaakt.
+  Master: geen view `gis2bim_risico_transportroutes`. Proef op detached kopie
+  (`D:\opruimactie\GIS2BIM_proef_20261005_prcontour`): beeld in `gis2bim_risico_pr_contour`, 0 nieuwe views.
+  Project 5008 bewust ongemoeid (bevat nog `gis2bim_risico_transportroutes`, besluit Jochem).
 
 ---
 

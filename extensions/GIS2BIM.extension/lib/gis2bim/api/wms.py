@@ -289,7 +289,7 @@ WMS_LAYERS = {
         "key": "transportroutes",
         "name": "Basisnet transportroutes (PR 10-6)",
         "category": "Veiligheid",
-        "view_name": "gis2bim_risico_transportroutes",
+        "view_name": "gis2bim_risico_pr_contour",  # alle transport met PR 10-6 (besluit 05-10-2026)
         "base_url": "https://rev-portaal.nl/geoserver/wms",
         "layers": "rev_public:bn_pr10_6",
         "styles": "",

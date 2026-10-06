@@ -43,7 +43,7 @@ log = get_logger("Locatie")
 
 # GIS2BIM modules
 try:
-    from gis2bim.api.pdok import PDOKLocatie
+    from gis2bim.api.pdok import PDOKLocatie, PERCEEL_BRON_WFS
     from gis2bim.revit.location import (
         set_project_location_rd,
         set_site_location_wgs84,
@@ -74,6 +74,16 @@ def onbekend_regels(param_result):
         "Deze velden staan op '{0}'. Controleer ze en".format(ONBEKEND),
         "draai Locatie Instellen opnieuw.",
     ]
+
+
+
+def perceel_regels(location_data):
+    """Waarschuwing als het perceel niet onder het adrespunt is bepaald."""
+    bron = getattr(location_data, "perceel_bron", "")
+    if not bron or bron == PERCEEL_BRON_WFS:
+        return []
+    log("WAARSCHUWING perceel: {0}".format(bron))
+    return ["", "LET OP - perceel uit {0}. Controleer het perceel.".format(bron)]
 
 
 class LocatieWindow(Window):
@@ -362,6 +372,7 @@ class LocatieWindow(Window):
             if filled:
                 msg_lines.append("Ingevulde parameters: {0}".format(len(filled)))
             msg_lines.extend(onbekend_regels(param_result))
+            msg_lines.extend(perceel_regels(location_data))
 
             self.DialogResult = True
             self.Close()
@@ -458,6 +469,7 @@ class LocatieWindow(Window):
                 for err in errors:
                     msg_lines.append("  " + err)
             msg_lines.extend(onbekend_regels(param_result))
+            msg_lines.extend(perceel_regels(result))
 
             self.DialogResult = True
             self.Close()

@@ -64,6 +64,64 @@ WINDGEBIED_MAPPING = {
 }
 
 
+# Bron van het perceel in LocationData.perceel_bron
+PERCEEL_BRON_WFS = "kadastrale kaart (perceel onder het adrespunt)"
+PERCEEL_BRON_GEKOPPELD = (
+    "gekoppeld_perceel[0] - kadastrale kaart gaf geen perceel onder het adrespunt"
+)
+
+# Halve breedte (m) van de bbox waarmee percelen rond het adrespunt worden opgehaald
+PERCEEL_ZOEKMARGE_M = 1.0
+
+
+def punt_in_polygoon(x, y, ring):
+    """Ray casting: ligt (x, y) binnen de ring [(x, y), ...]?"""
+    binnen = False
+    n = len(ring)
+    j = n - 1
+    for i in range(n):
+        xi, yi = ring[i]
+        xj, yj = ring[j]
+        if (yi > y) != (yj > y):
+            x_snij = xi + (y - yi) * (xj - xi) / (yj - yi)
+            if x < x_snij:
+                binnen = not binnen
+        j = i
+    return binnen
+
+
+def kies_perceel(rd_x, rd_y, percelen, gekoppeld):
+    """
+    Kies het kadastrale perceel bij een adres.
+
+    Voorkeur: het perceel waarin het adrespunt ligt (kadastrale kaart).
+    Terugval: het eerste gekoppelde perceel uit de Locatieserver. Die lijst is
+    niet geordend; voor Zeekant 37 Den Haag staat er eerst een strook van
+    25 m2 (AF 3974) en pas daarna het bouwperceel (AF 2487).
+
+    Args:
+        rd_x, rd_y: Adrespunt in RD
+        percelen: PerceelData-lijst rond het punt (mag leeg zijn)
+        gekoppeld: Lijst als ["GVH23-AF-3974", "GVH23-AF-2487"]
+
+    Returns:
+        Tuple (gemeente, sectie, perceelnummer, bron); strings, leeg als onbekend
+    """
+    for perceel in percelen or []:
+        if perceel.gemeentecode and punt_in_polygoon(rd_x, rd_y, perceel.geometry):
+            return (
+                str(perceel.gemeentecode),
+                str(perceel.sectie or ""),
+                str(perceel.perceelnummer or ""),
+                PERCEEL_BRON_WFS,
+            )
+    if gekoppeld and gekoppeld[0]:
+        delen = gekoppeld[0].split("-")
+        delen += [""] * (3 - len(delen))
+        return (delen[0], delen[1], delen[2], PERCEEL_BRON_GEKOPPELD)
+    return ("", "", "", "")
+
+
 class LocationData:
     """Container voor locatiegegevens."""
     
@@ -189,12 +247,22 @@ class PDOKLocatie:
         lon = float(ll_coords[0])
         lat = float(ll_coords[1])
         
-        # Kadaster info
-        kadaster_raw = doc.get("gekoppeld_perceel", ["--"])
-        if kadaster_raw:
-            kadaster = kadaster_raw[0].split("-") if kadaster_raw[0] else ["", "", ""]
-        else:
-            kadaster = ["", "", ""]
+        # Kadaster info: perceel onder het adrespunt, anders gekoppeld_perceel[0]
+        try:
+            percelen = PDOKKadaster().get_percelen(
+                rd_x - PERCEEL_ZOEKMARGE_M,
+                rd_y - PERCEEL_ZOEKMARGE_M,
+                rd_x + PERCEEL_ZOEKMARGE_M,
+                rd_y + PERCEEL_ZOEKMARGE_M,
+            )
+        except Exception as e:
+            print("Kadastrale kaart niet bereikbaar: {0}".format(e))
+            percelen = []
+        kad_gemeente, kad_sectie, kad_perceel, perceel_bron = kies_perceel(
+            rd_x, rd_y, percelen, doc.get("gekoppeld_perceel", [])
+        )
+        if perceel_bron == PERCEEL_BRON_GEKOPPELD:
+            print("WAARSCHUWING perceel: {0}".format(perceel_bron))
         
         # Provincie en windgebied
         provincie = doc.get("provincienaam", "")
@@ -233,9 +301,9 @@ class PDOKLocatie:
             gemeente=doc.get("gemeentenaam", ""),
             provincie=provincie,
             waterschap=doc.get("waterschapsnaam", ""),
-            kadaster_gemeente=kadaster[0] if len(kadaster) > 0 else "",
-            kadaster_sectie=kadaster[1] if len(kadaster) > 1 else "",
-            kadaster_perceel=kadaster[2] if len(kadaster) > 2 else "",
+            kadaster_gemeente=kad_gemeente,
+            kadaster_sectie=kad_sectie,
+            kadaster_perceel=kad_perceel,
             windgebied=windgebied,
             url=url,
         )
@@ -243,6 +311,7 @@ class PDOKLocatie:
         # Extra velden toevoegen (niet in constructor)
         result.straatnaam = straatnaam
         result.huisnummer = volledig_huisnummer
+        result.perceel_bron = perceel_bron
         
         return result
     
@@ -612,8 +681,14 @@ class PDOKKadaster:
                     geometry=coords,
                     perceelnummer=props.get("perceelnummer"),
                     sectie=props.get("sectie"),
-                    gemeentecode=props.get("AKRKadastraleGemeenteCode"),
-                    oppervlakte=props.get("kadastraleGrootte")
+                    gemeentecode=(
+                        props.get("AKRKadastraleGemeenteCodeWaarde")
+                        or props.get("AKRKadastraleGemeenteCode")
+                    ),
+                    oppervlakte=(
+                        props.get("kadastraleGrootteWaarde")
+                        or props.get("kadastraleGrootte")
+                    )
                 ))
             
             return percelen

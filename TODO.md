@@ -29,8 +29,11 @@ Test: `python extensions/GIS2BIM.extension/tests/test_location_mapping.py`.
   (Z:/X: weg) en die wordt opgeruimd: geen Locatie-log van 5008 meer terug te vinden.
 - [ ] `pdok.search_rd_coordinates`: `fq=centroide_rd:[x,y TO x,y]` geeft 0 hits in
   beide volgordes - reverse geocoding werkt nooit.
-- [ ] `_parse_location_doc` neemt `gekoppeld_perceel[0]`; voor Zeekant 37 is dat
-  GVH23 AF 3974 (25 m2 strook) i.p.v. 2487 (914 m2, onder het RD-punt).
+- [x] Perceelkeuze: `_parse_location_doc` kiest nu het perceel onder het adrespunt
+  (kadastrale-kaart-WFS, `kies_perceel`); terugval op `gekoppeld_perceel[0]` met
+  waarschuwing. 5008 -> GVH23 AF 2487 (was 3974). WFS-veldnamen gecorrigeerd
+  (`AKRKadastraleGemeenteCodeWaarde`, `kadastraleGrootteWaarde`).
+  Test: `tests/test_perceelkeuze.py --live`.
 - [ ] Dynamo `GIS2BIM_basis_v7.dyn` (buiten repo) heeft dezelfde verwisseling.
 - [ ] Geraakte projectmodellen herstellen (lijst in planner-melding 06-10).
 

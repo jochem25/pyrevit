@@ -37,8 +37,10 @@ Test: `python extensions/GIS2BIM.extension/tests/test_location_mapping.py`.
 - [x] Knop `Bouwkunde > IFC > Nieuw project: IFC-GUID's` (besluit Jochem 06-10). Logica
   gedeeld in `GIS2BIM.extension/lib/gis2bim/revit/ifc_guid.py` (ook gebruikt door
   Locatie Instellen). Template-waarden 2025_model gemeten en toegevoegd.
-- [ ] Proef van de knop in Revit (kopie, export, tweede keer niets) - wacht op een
-  veilige Revit-sessie (niet in een sessie met een werkmodel van Jochem).
+- [ ] Knop NieuwProjectIFCGUIDs is NIET in Revit getest (besluit Jochem 06-10, optie B).
+  Praktijkproef bij het eerstvolgende nieuwe project na pyRevit-Reload; verwacht:
+  eerste keer drie nieuwe GUID's in de uitvoer, tweede keer de melding dat het project
+  al eigen IFC-GUID's heeft.
 - [x] Perceelkeuze: `_parse_location_doc` kiest nu het perceel onder het adrespunt
   (kadastrale-kaart-WFS, `kies_perceel`); terugval op `gekoppeld_perceel[0]` met
   waarschuwing. 5008 -> GVH23 AF 2487 (was 3974). WFS-veldnamen gecorrigeerd

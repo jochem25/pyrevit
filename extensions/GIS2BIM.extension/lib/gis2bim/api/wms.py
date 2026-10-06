@@ -37,8 +37,8 @@ except ImportError:
 # =============================================================================
 
 # view_name: altijd kleine letters en gelijk aan de viewnaam in de master-
-# template (GIS2BIM_25_v1.rvt). Zoeken gebeurt hoofdletterongevoelig, een
-# ontbrekende view maakt gis2bim.ui.view_setup aan met de standaard.
+# template (000_revit/70_GIS2BIM/GIS2BIM_25_template_v2.rvt). Zoeken gebeurt
+# hoofdletterongevoelig, een ontbrekende view maakt gis2bim.ui.view_setup aan met de standaard.
 WMS_LAYERS = {
     # --- Achtergrond ---
     "luchtfoto_actueel": {

@@ -11,9 +11,14 @@ Gefixt: `set_survey_point` riep `ProjectPosition(north, east, ...)` aan; de API 
 al eerder in `02_dynamo/scripts_GIS/naar pyrevit/GIS2BIM_basis_v7.dyn`.
 Test: `python extensions/GIS2BIM.extension/tests/test_location_mapping.py`.
 
-- [ ] Master `000_revit/70_GIS2BIM/GIS2BIM_25_v1.rvt` heeft zelf EW/NS verwisseld en
-  Amsterdam-projectinfo (Memeleiland 4, Project Number 2433, ASD07 K 10191). Elke
-  nieuwe projectkopie erft dat. Besluit Jochem: master leegmaken of herstellen.
+- [x] Master opgeschoond (06-10): Jochem hernoemde hem naar
+  `000_revit/70_GIS2BIM/GIS2BIM_25_template_v2.rvt` (oude `GIS2BIM_25_v1.rvt` weg; backup
+  `D:\opruimactie\GIS2BIM_25_v1_master_backup_20261006_opschonen`). Projectdata
+  (Amsterdam, Memeleiland 4 / 2433) leeg, ProjectPosition 0/0/0/0, SiteLocation
+  Amersfoort 'Nederland - nog in te stellen'. Opslaan door Jochem.
+- [ ] Oude params in de template (mortoncode, project_plaats, project_huisnummer,
+  project_straatnaam, kadastraal_*, windgebied, natura2000_afstand, sitename) zijn leeg
+  maar bestaan nog. Code leest ze niet; labels/schedules in het model niet gecontroleerd.
 - [x] `set_project_info_from_location` sloeg lege waarden over: bij terugval op
   minimale data bleven provincie/kadaster van de master staan (oorzaak ASD07/
   Noord-Holland in 5008). Nu: bevraagde GIS2BIM_*-velden krijgen

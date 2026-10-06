@@ -49,7 +49,11 @@ try:
         CONFIG_KEY_ENVIRONMENT,
         DEFAULT_ENVIRONMENT,
     )
-    from gis2bim.revit.location import get_project_location_rd
+    from gis2bim.revit.location import (
+        get_project_location_rd,
+        get_rd_from_project_params,
+    )
+    from gis2bim.ui.location_setup import is_valid_rd
     GIS2BIM_LOADED = True
 except ImportError as e:
     IMPORT_ERROR = str(e)
@@ -191,8 +195,19 @@ def main():
         forms.alert("Geen actief Revit-document.", title="Regels op de kaart")
         return
 
-    # 1. Projectlocatie in RD
-    locatie = get_project_location_rd(doc)
+    # 1. Projectlocatie in RD: eerst GIS2BIM_RD_X/Y (uit PDOK), dan Survey Point
+    locatie = get_rd_from_project_params(doc) or get_project_location_rd(doc)
+    if locatie and locatie.get("rd_x") and not is_valid_rd(
+        locatie["rd_x"], locatie["rd_y"]
+    ):
+        forms.alert(
+            "Projectlocatie valt buiten Nederland (RD {0:.0f}, {1:.0f}).\n\n"
+            "Vermoedelijk staan RD X en RD Y verwisseld in de gedeelde "
+            "coordinaten. Stel de locatie opnieuw in via GIS2BIM > Setup > "
+            "Locatie Instellen.".format(locatie["rd_x"], locatie["rd_y"]),
+            title="Regels op de kaart",
+        )
+        return
     if not locatie or not locatie.get("rd_x"):
         forms.alert(
             "Geen projectlocatie gevonden.\n\n"

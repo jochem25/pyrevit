@@ -1,6 +1,28 @@
 # 3BM pyRevit Project - TODO
 
-*Laatste update: 15 september 2026*
+*Laatste update: 6 oktober 2026*
+
+---
+
+## GIS2BIM - RD X/Y verwisseld in gedeelde coordinaten (6 oktober 2026, HOOG)
+
+Gefixt: `set_survey_point` riep `ProjectPosition(north, east, ...)` aan; de API is
+`(eastWest, northSouth, ...)`. Fout zat erin sinds de initial commit (22-02-2026) en
+al eerder in `02_dynamo/scripts_GIS/naar pyrevit/GIS2BIM_basis_v7.dyn`.
+Test: `python extensions/GIS2BIM.extension/tests/test_location_mapping.py`.
+
+- [ ] Master `000_revit/70_GIS2BIM/GIS2BIM_25_v1.rvt` heeft zelf EW/NS verwisseld en
+  Amsterdam-projectinfo (Memeleiland 4, Project Number 2433, ASD07 K 10191). Elke
+  nieuwe projectkopie erft dat. Besluit Jochem: master leegmaken of herstellen.
+- [ ] `set_project_info_from_location` slaat lege waarden over: valt de PDOK-lookup
+  terug op minimale data, dan blijven provincie/kadaster van de master staan (oorzaak
+  ASD07/Noord-Holland in 5008). Voorstel: GIS2BIM_*-velden dan leegmaken.
+- [ ] `pdok.search_rd_coordinates`: `fq=centroide_rd:[x,y TO x,y]` geeft 0 hits in
+  beide volgordes - reverse geocoding werkt nooit.
+- [ ] `_parse_location_doc` neemt `gekoppeld_perceel[0]`; voor Zeekant 37 is dat
+  GVH23 AF 3974 (25 m2 strook) i.p.v. 2487 (914 m2, onder het RD-punt).
+- [ ] Dynamo `GIS2BIM_basis_v7.dyn` (buiten repo) heeft dezelfde verwisseling.
+- [ ] Geraakte projectmodellen herstellen (lijst in planner-melding 06-10).
 
 ---
 

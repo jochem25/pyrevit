@@ -88,7 +88,8 @@ def setup_project_location(window, doc, log=None):
             return (rd_x, rd_y)
         else:
             log("WAARSCHUWING: RD coords buiten bereik: {0}, {1}".format(rd_x, rd_y))
-            # Probeer omgedraaid (veelvoorkomend bij Survey Point)
+            # Probeer omgedraaid: set_survey_point zette RD X/Y tot
+            # 06-10-2026 verwisseld, oude modellen hebben dat nog
             if is_valid_rd(rd_y, rd_x):
                 _show_location(window, rd_y, rd_x)
                 log("Locatie gecorrigeerd (X/Y swap)")

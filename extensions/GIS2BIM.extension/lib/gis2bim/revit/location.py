@@ -349,30 +349,48 @@ def get_site_location(doc):
     }
 
 
+def project_position_args(east_m, north_m, elevation_m=0.0, angle_deg=0.0):
+    """Argumenten voor ProjectPosition in de volgorde van de Revit API.
+
+    De constructor is ProjectPosition(eastWest, northSouth, elevation, angle):
+    RD X (east) eerst, RD Y (north) tweede. Tot 06-10-2026 stonden ze hier
+    omgedraaid, waardoor elk model met RD X en RD Y verwisseld in de
+    gedeelde coördinaten kwam.
+
+    Returns:
+        Tuple (east_ft, north_ft, elevation_ft, angle_rad)
+    """
+    return (
+        east_m * METER_TO_FEET,
+        north_m * METER_TO_FEET,
+        elevation_m * METER_TO_FEET,
+        math.radians(angle_deg),
+    )
+
+
 def set_survey_point(doc, east_m, north_m, elevation_m=0.0, angle_deg=0.0):
     """Stel Survey Point in op RD coördinaten via SetProjectPosition."""
     if not IN_REVIT:
         raise RuntimeError("Deze functie werkt alleen in Revit")
-    
-    east_ft = east_m * METER_TO_FEET
-    north_ft = north_m * METER_TO_FEET
-    elev_ft = elevation_m * METER_TO_FEET
-    angle_rad = math.radians(angle_deg)
-    
+
+    east_ft, north_ft, elev_ft, angle_rad = project_position_args(
+        east_m, north_m, elevation_m, angle_deg
+    )
+
     t = Transaction(doc, "GIS2BIM - Set Survey Point")
     t.Start()
-    
+
     try:
         project_location = doc.ActiveProjectLocation
-        
-        # ProjectPosition(northSouth, eastWest, elevation, angle)
+
+        # ProjectPosition(eastWest, northSouth, elevation, angle)
         new_position = ProjectPosition(
-            north_ft,      # NorthSouth = RD Y
             east_ft,       # EastWest = RD X
+            north_ft,      # NorthSouth = RD Y
             elev_ft,
             angle_rad
         )
-        
+
         project_location.SetProjectPosition(XYZ(0, 0, 0), new_position)
         t.Commit()
         return True

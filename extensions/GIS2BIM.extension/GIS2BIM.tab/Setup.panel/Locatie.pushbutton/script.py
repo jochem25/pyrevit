@@ -77,6 +77,19 @@ def onbekend_regels(param_result):
 
 
 
+
+def ifc_guid_regels(param_result):
+    """Melding welke IFC-GUID's dit project heeft gekregen."""
+    gezet = param_result.get("ifc_guids", {})
+    if not gezet:
+        return []
+    log("IFC-GUID's gezet: {0}".format(gezet))
+    regels = ["", "Eigen IFC-GUID's gezet:"]
+    for naam in sorted(gezet):
+        regels.append("  {0}: {1}".format(naam, gezet[naam]))
+    return regels
+
+
 def perceel_regels(location_data):
     """Waarschuwing als het perceel niet onder het adrespunt is bepaald."""
     bron = getattr(location_data, "perceel_bron", "")
@@ -372,6 +385,7 @@ class LocatieWindow(Window):
             if filled:
                 msg_lines.append("Ingevulde parameters: {0}".format(len(filled)))
             msg_lines.extend(onbekend_regels(param_result))
+            msg_lines.extend(ifc_guid_regels(param_result))
             msg_lines.extend(perceel_regels(location_data))
 
             self.DialogResult = True
@@ -469,6 +483,7 @@ class LocatieWindow(Window):
                 for err in errors:
                     msg_lines.append("  " + err)
             msg_lines.extend(onbekend_regels(param_result))
+            msg_lines.extend(ifc_guid_regels(param_result))
             msg_lines.extend(perceel_regels(result))
 
             self.DialogResult = True

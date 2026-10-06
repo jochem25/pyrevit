@@ -25,6 +25,11 @@ except ImportError:  # IronPython 2.7
 project_position_args = _mod.project_position_args
 build_project_info_values = _mod.build_project_info_values
 ONBEKEND = _mod.ONBEKEND
+ifc_guid_uit_getal = _mod.ifc_guid_uit_getal
+nieuwe_ifc_guid = _mod.nieuwe_ifc_guid
+is_ifc_guid = _mod.is_ifc_guid
+bepaal_ifc_guids = _mod.bepaal_ifc_guids
+TEMPLATE_IFC_GUIDS = _mod.TEMPLATE_IFC_GUIDS
 
 FT = 0.3048
 TOL = 1e-6
@@ -98,10 +103,54 @@ def test_geslaagde_bevraging_heeft_geen_onbekend():
     assert waarden["GIS2BIM_Windgebied"] == "2"
 
 
+IFC_NAMEN = ("IfcProject GUID", "IfcSite GUID", "IfcBuilding GUID")
+
+
+def test_ifc_guid_base64_referentie():
+    # Referentie: ifcopenshell.guid.compress, zelfde 128-bits getal
+    getal = int("68bb1eb99856480dabf415e1a8c94ad1", 16)
+    assert ifc_guid_uit_getal(getal) == "1eknwvc5P83Qlq5U6eoKhH"
+    assert ifc_guid_uit_getal(0) == "0" * 22
+    assert ifc_guid_uit_getal(2 ** 128 - 1) == "3" + "$" * 21
+
+
+def test_nieuwe_ifc_guid_geldig_en_uniek():
+    guids = set(nieuwe_ifc_guid() for _ in range(500))
+    assert len(guids) == 500
+    for guid in guids:
+        assert is_ifc_guid(guid), guid
+
+
+def test_template_en_leeg_krijgen_drie_verschillende():
+    huidig = {
+        "IfcProject GUID": "1s2q5WbVH6KxJD2DJqjDgl",
+        "IfcSite GUID": "",
+        "IfcBuilding GUID": None,
+    }
+    nieuw = bepaal_ifc_guids(huidig)
+    assert sorted(nieuw) == sorted(IFC_NAMEN), nieuw
+    assert len(set(nieuw.values())) == 3
+    for guid in nieuw.values():
+        assert is_ifc_guid(guid) and guid not in TEMPLATE_IFC_GUIDS
+
+
+def test_eigen_waarde_nooit_overschreven_idempotent():
+    eerste = bepaal_ifc_guids({})
+    assert len(eerste) == 3
+    # tweede run op het resultaat van de eerste: niets te doen
+    assert bepaal_ifc_guids(eerste) == {}
+    eigen = {"IfcProject GUID": "0aBcDeFgHiJkLmNoPqRsTu"}
+    assert "IfcProject GUID" not in bepaal_ifc_guids(eigen)
+
+
 if __name__ == "__main__":
     test_rd_x_is_eastwest_rd_y_is_northsouth()
     test_elevation_and_angle()
     test_mislukte_bevraging_markeert_in_plaats_van_overslaan()
     test_none_wordt_onbekend_niet_tekst_none()
     test_geslaagde_bevraging_heeft_geen_onbekend()
+    test_ifc_guid_base64_referentie()
+    test_nieuwe_ifc_guid_geldig_en_uniek()
+    test_template_en_leeg_krijgen_drie_verschillende()
+    test_eigen_waarde_nooit_overschreven_idempotent()
     print("OK")

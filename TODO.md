@@ -14,9 +14,14 @@ Test: `python extensions/GIS2BIM.extension/tests/test_location_mapping.py`.
 - [ ] Master `000_revit/70_GIS2BIM/GIS2BIM_25_v1.rvt` heeft zelf EW/NS verwisseld en
   Amsterdam-projectinfo (Memeleiland 4, Project Number 2433, ASD07 K 10191). Elke
   nieuwe projectkopie erft dat. Besluit Jochem: master leegmaken of herstellen.
-- [ ] `set_project_info_from_location` slaat lege waarden over: valt de PDOK-lookup
-  terug op minimale data, dan blijven provincie/kadaster van de master staan (oorzaak
-  ASD07/Noord-Holland in 5008). Voorstel: GIS2BIM_*-velden dan leegmaken.
+- [x] `set_project_info_from_location` sloeg lege waarden over: bij terugval op
+  minimale data bleven provincie/kadaster van de master staan (oorzaak ASD07/
+  Noord-Holland in 5008). Nu: bevraagde GIS2BIM_*-velden krijgen
+  "onbekend - bevraging mislukt" + waarschuwing in Locatie Instellen.
+- [ ] Na Reload: Locatie Instellen draaien op een kopie en de waarschuwing zien
+  (alleen via bridge getest, niet via de knop).
+- [ ] bm_logger schrijft sinds de 3BM-ontkoppeling naar de proces-temp van Revit
+  (Z:/X: weg) en die wordt opgeruimd: geen Locatie-log van 5008 meer terug te vinden.
 - [ ] `pdok.search_rd_coordinates`: `fq=centroide_rd:[x,y TO x,y]` geeft 0 hits in
   beide volgordes - reverse geocoding werkt nooit.
 - [ ] `_parse_location_doc` neemt `gekoppeld_perceel[0]`; voor Zeekant 37 is dat

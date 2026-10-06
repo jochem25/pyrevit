@@ -470,23 +470,48 @@ def set_site_location_wgs84(doc, latitude, longitude, place_name="Project"):
         return False
 
 
-def set_project_info_from_location(doc, location_data, street="", housenumber=""):
+# Markering voor een veld dat de PDOK-bevraging niet kon vullen. Een lege
+# waarde overslaan liet eerder de waarde van de master staan (5008 kreeg zo
+# Noord-Holland en ASD07 uit een Amsterdams project).
+ONBEKEND = "onbekend - bevraging mislukt"
+
+# GIS2BIM-velden die uit de bevraging komen en dus nooit oud mogen blijven staan
+GIS2BIM_BEVRAAGDE_VELDEN = (
+    "GIS2BIM_Plaats",
+    "GIS2BIM_Straat",
+    "GIS2BIM_Huisnummer",
+    "GIS2BIM_Postcode",
+    "GIS2BIM_Provincie",
+    "GIS2BIM_Windgebied",
+    "GIS2BIM_Kadaster_Gemeente",
+    "GIS2BIM_Kadaster_Sectie",
+    "GIS2BIM_Kadaster_Perceel",
+)
+
+
+def _als_tekst(value):
+    """None en lege waarden worden "", de rest een gestripte string."""
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def build_project_info_values(location_data, street="", housenumber=""):
     """
-    Vul Project Info parameters in met locatiegegevens van PDOK.
-    Maakt ontbrekende parameters automatisch aan.
-    
+    Bepaal de Project Info-waarden uit locatiegegevens, zonder Revit.
+
+    Een bevraagd GIS2BIM-veld zonder waarde krijgt ONBEKEND, zodat een oude
+    waarde (bijvoorbeeld uit de master) altijd wordt overschreven.
+
     Args:
-        doc: Revit document
         location_data: LocationData object of dict met locatiegegevens
         street: Straatnaam
         housenumber: Huisnummer
-    
+
     Returns:
-        dict met {"filled": {param: value}, "not_found": [params], "errors": [errors], "created": [params]}
+        Tuple (param_mapping, onbekend): dict parameternaam -> waarde en de
+        lijst velden die op ONBEKEND zijn gezet
     """
-    if not IN_REVIT:
-        raise RuntimeError("Deze functie werkt alleen in Revit")
-    
     # Converteer LocationData naar dict indien nodig
     if hasattr(location_data, 'to_dict'):
         data = location_data.to_dict()
@@ -512,32 +537,32 @@ def set_project_info_from_location(doc, location_data, street="", housenumber=""
         }
     else:
         data = dict(location_data)
-    
+
     # Gebruik straatnaam van PDOK als niet handmatig opgegeven
     if not street and data.get("straatnaam"):
         street = data.get("straatnaam")
-    
+
     # Gebruik huisnummer van PDOK als niet handmatig opgegeven
     if not housenumber and data.get("huisnummer_pdok"):
         housenumber = data.get("huisnummer_pdok")
-    
+
     # Bouw volledig adres
     address_parts = []
     if street:
         address_parts.append(street)
     if housenumber:
         address_parts.append(str(housenumber))
-    
+
     if address_parts:
         full_address = " ".join(address_parts) + ", " + data.get("postcode", "") + " " + data.get("gemeente", "")
     else:
         full_address = data.get("postcode", "") + " " + data.get("gemeente", "")
-    
+
     # Mortoncode berekenen (echte Z-order curve, niet X,Y string)
     rd_x = data.get("rd_x", 0)
     rd_y = data.get("rd_y", 0)
     mortoncode = str(calculate_mortoncode(rd_x, rd_y))
-    
+
     # Mapping: Revit parameter naam -> waarde
     # Standaard Revit parameters eerst, dan custom
     param_mapping = {
@@ -550,15 +575,46 @@ def set_project_info_from_location(doc, location_data, street="", housenumber=""
         "GIS2BIM_Huisnummer": str(housenumber) if housenumber else "",
         "GIS2BIM_Postcode": data.get("postcode", ""),
         "GIS2BIM_Provincie": data.get("provincie", ""),
-        "GIS2BIM_Windgebied": str(data.get("windgebied", "")),
-        "GIS2BIM_Kadaster_Gemeente": str(data.get("kadaster_gemeente", "")),
-        "GIS2BIM_Kadaster_Sectie": str(data.get("kadaster_sectie", "")),
-        "GIS2BIM_Kadaster_Perceel": str(data.get("kadaster_perceel", "")),
+        "GIS2BIM_Windgebied": _als_tekst(data.get("windgebied")),
+        "GIS2BIM_Kadaster_Gemeente": _als_tekst(data.get("kadaster_gemeente")),
+        "GIS2BIM_Kadaster_Sectie": _als_tekst(data.get("kadaster_sectie")),
+        "GIS2BIM_Kadaster_Perceel": _als_tekst(data.get("kadaster_perceel")),
         "GIS2BIM_RD_X": str(int(rd_x)),
         "GIS2BIM_RD_Y": str(int(rd_y)),
         "GIS2BIM_Mortoncode": mortoncode,
     }
+
+    onbekend = []
+    for param_name in GIS2BIM_BEVRAAGDE_VELDEN:
+        if not _als_tekst(param_mapping.get(param_name)):
+            param_mapping[param_name] = ONBEKEND
+            onbekend.append(param_name)
+
+    return param_mapping, onbekend
+
+
+def set_project_info_from_location(doc, location_data, street="", housenumber=""):
+    """
+    Vul Project Info parameters in met locatiegegevens van PDOK.
+    Maakt ontbrekende parameters automatisch aan.
     
+    Args:
+        doc: Revit document
+        location_data: LocationData object of dict met locatiegegevens
+        street: Straatnaam
+        housenumber: Huisnummer
+    
+    Returns:
+        dict met {"filled": {param: value}, "not_found": [params],
+        "errors": [errors], "created": [params], "onbekend": [params]}
+    """
+    if not IN_REVIT:
+        raise RuntimeError("Deze functie werkt alleen in Revit")
+    
+    param_mapping, onbekend = build_project_info_values(
+        location_data, street, housenumber
+    )
+
     # Standaard Revit parameters die NIET aangemaakt hoeven worden
     builtin_params = ["Project Address", "Project Name"]
     
@@ -632,6 +688,8 @@ def set_project_info_from_location(doc, location_data, street="", housenumber=""
         
     except Exception as e:
         t.RollBack()
-        return {"filled": {}, "not_found": [], "errors": [str(e)], "created": []}
+        return {"filled": {}, "not_found": [], "errors": [str(e)], "created": [],
+                "onbekend": onbekend}
     
-    return {"filled": filled, "not_found": not_found, "errors": errors, "created": created}
+    return {"filled": filled, "not_found": not_found, "errors": errors,
+            "created": created, "onbekend": onbekend}

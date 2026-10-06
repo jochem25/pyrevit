@@ -49,7 +49,8 @@ try:
         set_site_location_wgs84,
         get_project_location_rd,
         get_site_location,
-        set_project_info_from_location
+        set_project_info_from_location,
+        ONBEKEND,
     )
     from gis2bim.coordinates import wgs84_to_rd
     GIS2BIM_LOADED = True
@@ -58,6 +59,21 @@ except ImportError as e:
     GIS2BIM_LOADED = False
     IMPORT_ERROR = str(e)
     log("Import error: {0}".format(e))
+
+
+def onbekend_regels(param_result):
+    """Waarschuwingsregels voor velden die de bevraging niet kon vullen."""
+    onbekend = param_result.get("onbekend", [])
+    if not onbekend:
+        return []
+    log("WAARSCHUWING bevraging mislukt, op onbekend gezet: {0}".format(onbekend))
+    return [
+        "",
+        "LET OP - PDOK-bevraging mislukt voor:",
+        "  " + ", ".join(onbekend),
+        "Deze velden staan op '{0}'. Controleer ze en".format(ONBEKEND),
+        "draai Locatie Instellen opnieuw.",
+    ]
 
 
 class LocatieWindow(Window):
@@ -345,6 +361,7 @@ class LocatieWindow(Window):
                 msg_lines.append("Nieuw aangemaakte parameters: {0}".format(len(created)))
             if filled:
                 msg_lines.append("Ingevulde parameters: {0}".format(len(filled)))
+            msg_lines.extend(onbekend_regels(param_result))
 
             self.DialogResult = True
             self.Close()
@@ -440,6 +457,7 @@ class LocatieWindow(Window):
                 msg_lines.append("Fouten:")
                 for err in errors:
                     msg_lines.append("  " + err)
+            msg_lines.extend(onbekend_regels(param_result))
 
             self.DialogResult = True
             self.Close()

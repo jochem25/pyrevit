@@ -1,0 +1,10 @@
+title: "Nieuw project:\nIFC-GUID's"
+tooltip: >
+  Geeft een NIEUW project eigen IFC-GUID's (IfcProject, IfcSite, IfcBuilding).
+
+  Kopieen van een template exporteren anders allemaal dezelfde GUID's.
+  Zet alleen velden die leeg zijn of een bekende template-waarde hebben;
+  eigen waarden blijven staan. Niet gebruiken voor een project dat al in
+  Dalux/BIMcollab of bij derden staat.
+author: 3BM Bouwkunde
+highlight: new

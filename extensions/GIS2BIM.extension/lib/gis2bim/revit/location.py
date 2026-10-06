@@ -7,9 +7,10 @@ Beheer van Survey Point en Project Base Point voor GIS2BIM.
 Inclusief automatisch aanmaken van Project Parameters.
 """
 
-import binascii
 import math
 import os
+
+from .ifc_guid import set_project_ifc_guids
 
 # Debug: print import status
 print("GIS2BIM location.py: Starting imports...")
@@ -594,107 +595,6 @@ def build_project_info_values(location_data, street="", housenumber=""):
     return param_mapping, onbekend
 
 
-# --- IFC-GUID's per project ------------------------------------------------
-# Revit exporteert IfcProject/IfcSite/IfcBuilding met de waarde uit deze
-# velden; zijn ze leeg, dan leidt de exporter de GUID af van de UniqueId van
-# ProjectInformation - en die is in elke kopie van de template gelijk. Elk
-# project krijgt daarom bij Locatie Instellen eenmalig eigen GUID's.
-
-IFC_GUID_TEKENS = (
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
-)
-IFC_GUID_LENGTE = 22
-
-# Volgorde: (parameternaam, naam van de BuiltInParameter)
-IFC_GUID_PARAMS = (
-    ("IfcProject GUID", "IFC_PROJECT_GUID"),
-    ("IfcSite GUID", "IFC_SITE_GUID"),
-    ("IfcBuilding GUID", "IFC_BUILDING_GUID"),
-)
-
-# Waarden die uit de template komen en dus in meerdere projecten voorkomen:
-# opgeslagen in de oude master, en afgeleid door de exporter bij lege velden
-TEMPLATE_IFC_GUIDS = frozenset([
-    "1s2q5WbVH6KxJD2DJqjDgl",
-    "1s2q5WbVH6KxJD2DJqjDgj",
-    "1s2q5WbVH6KxJD2DJqjDgk",
-    "2EqZq4nlnFB9HcNIZeBgbW",
-    "2EqZq4nlnFB9HcNIZeBgbY",
-    "2EqZq4nlnFB9HcNIZeBgbX",
-])
-
-
-def ifc_guid_uit_getal(getal):
-    """128-bits getal -> IFC-GUID (22 tekens, buildingSMART-base64)."""
-    tekens = []
-    for _ in range(IFC_GUID_LENGTE):
-        tekens.append(IFC_GUID_TEKENS[getal & 0x3F])
-        getal >>= 6
-    return "".join(reversed(tekens))
-
-
-def nieuwe_ifc_guid():
-    """Willekeurige IFC-GUID (eerste teken 0-3, zoals de standaard eist)."""
-    getal = int(binascii.hexlify(os.urandom(16)), 16)
-    return ifc_guid_uit_getal(getal)
-
-
-def is_ifc_guid(waarde):
-    """Geldige IFC-GUID: 22 tekens uit de IFC-tekenset, eerste teken 0-3."""
-    return (
-        bool(waarde)
-        and len(waarde) == IFC_GUID_LENGTE
-        and waarde[0] in "0123"
-        and all(t in IFC_GUID_TEKENS for t in waarde)
-    )
-
-
-def bepaal_ifc_guids(huidig):
-    """
-    Welke IFC-GUID-velden een nieuwe waarde krijgen.
-
-    Alleen lege velden en velden met een template-waarde; een eigen waarde
-    van het project wordt nooit overschreven.
-
-    Args:
-        huidig: dict parameternaam -> huidige waarde (None of "" = leeg)
-
-    Returns:
-        dict parameternaam -> nieuwe GUID (leeg als er niets te doen is)
-    """
-    nieuw = {}
-    for naam, _ in IFC_GUID_PARAMS:
-        waarde = _als_tekst(huidig.get(naam))
-        if waarde and waarde not in TEMPLATE_IFC_GUIDS:
-            continue
-        guid = nieuwe_ifc_guid()
-        while guid in nieuw.values() or guid in TEMPLATE_IFC_GUIDS:
-            guid = nieuwe_ifc_guid()
-        nieuw[naam] = guid
-    return nieuw
-
-
-def _set_project_ifc_guids(project_info):
-    """Zet eigen IFC-GUID's (binnen een lopende transactie)."""
-    from Autodesk.Revit.DB import BuiltInParameter
-
-    params = {}
-    for naam, bip_naam in IFC_GUID_PARAMS:
-        param = project_info.get_Parameter(getattr(BuiltInParameter, bip_naam))
-        if param is None:
-            param = project_info.LookupParameter(naam)
-        if param is not None and not param.IsReadOnly:
-            params[naam] = param
-    huidig = dict((naam, p.AsString()) for naam, p in params.items())
-    nieuw = bepaal_ifc_guids(huidig)
-    gezet = {}
-    for naam, guid in nieuw.items():
-        if naam in params:
-            params[naam].Set(guid)
-            gezet[naam] = guid
-    return gezet
-
-
 def set_project_info_from_location(doc, location_data, street="", housenumber=""):
     """
     Vul Project Info parameters in met locatiegegevens van PDOK.
@@ -788,7 +688,7 @@ def set_project_info_from_location(doc, location_data, street="", housenumber=""
                 errors.append("{0}: {1}".format(param_name, str(ex)))
 
         try:
-            ifc_guids = _set_project_ifc_guids(project_info)
+            ifc_guids = set_project_ifc_guids(project_info)
         except Exception as ex:
             ifc_guids = {}
             errors.append("IFC-GUID's: {0}".format(str(ex)))

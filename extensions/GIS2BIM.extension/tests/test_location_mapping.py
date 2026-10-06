@@ -5,31 +5,32 @@ RD -> ProjectPosition en Project Info-waarden na een (mislukte) PDOK-bevraging.
 
     python extensions/GIS2BIM.extension/tests/test_location_mapping.py
 """
+import importlib
 import os
+import sys
+import types
 
-# Rechtstreeks laden: het package-__init__ importeert pyrevit
-_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "..", "lib", "gis2bim", "revit", "location.py",
-)
-try:
-    import importlib.util as _ilu
+_LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib")
 
-    _spec = _ilu.spec_from_file_location("gis2bim_location", _PATH)
-    _mod = _ilu.module_from_spec(_spec)
-    _spec.loader.exec_module(_mod)
-except ImportError:  # IronPython 2.7
-    import imp
+# Package-stubs: het echte gis2bim-__init__ importeert pyrevit
+for _naam, _pad in (
+    ("gis2bim", ("gis2bim",)),
+    ("gis2bim.revit", ("gis2bim", "revit")),
+):
+    _stub = types.ModuleType(_naam)
+    _stub.__path__ = [os.path.join(_LIB, *_pad)]
+    sys.modules[_naam] = _stub
 
-    _mod = imp.load_source("gis2bim_location", _PATH)
+_mod = importlib.import_module("gis2bim.revit.location")
+_ifc = importlib.import_module("gis2bim.revit.ifc_guid")
 project_position_args = _mod.project_position_args
 build_project_info_values = _mod.build_project_info_values
 ONBEKEND = _mod.ONBEKEND
-ifc_guid_uit_getal = _mod.ifc_guid_uit_getal
-nieuwe_ifc_guid = _mod.nieuwe_ifc_guid
-is_ifc_guid = _mod.is_ifc_guid
-bepaal_ifc_guids = _mod.bepaal_ifc_guids
-TEMPLATE_IFC_GUIDS = _mod.TEMPLATE_IFC_GUIDS
+ifc_guid_uit_getal = _ifc.ifc_guid_uit_getal
+nieuwe_ifc_guid = _ifc.nieuwe_ifc_guid
+is_ifc_guid = _ifc.is_ifc_guid
+bepaal_ifc_guids = _ifc.bepaal_ifc_guids
+TEMPLATE_IFC_GUIDS = _ifc.TEMPLATE_IFC_GUIDS
 
 FT = 0.3048
 TOL = 1e-6
@@ -143,6 +144,24 @@ def test_eigen_waarde_nooit_overschreven_idempotent():
     assert "IfcProject GUID" not in bepaal_ifc_guids(eigen)
 
 
+def test_template_waarden_2025_model_worden_vervangen():
+    # Gemeten 06-10-2026 op een kopie van 000_revit/2025_model.rvt
+    opgeslagen = {
+        "IfcProject GUID": "3PZ8Su8NTEdQsuM17MItvm",
+        "IfcSite GUID": "0zA0X56L966w8JjEBLepAr",
+        "IfcBuilding GUID": "3PZ8Su8NTEdQsuM17MItvn",
+    }
+    afgeleid = {
+        "IfcProject GUID": "0zA0X56L966w8JjEBLepAt",
+        "IfcSite GUID": "0zA0X56L966w8JjEBLepAr",
+        "IfcBuilding GUID": "0zA0X56L966w8JjEBLepAs",
+    }
+    for huidig in (opgeslagen, afgeleid):
+        for guid in huidig.values():
+            assert is_ifc_guid(guid) and guid in TEMPLATE_IFC_GUIDS, guid
+        assert sorted(bepaal_ifc_guids(huidig)) == sorted(IFC_NAMEN)
+
+
 if __name__ == "__main__":
     test_rd_x_is_eastwest_rd_y_is_northsouth()
     test_elevation_and_angle()
@@ -153,4 +172,5 @@ if __name__ == "__main__":
     test_nieuwe_ifc_guid_geldig_en_uniek()
     test_template_en_leeg_krijgen_drie_verschillende()
     test_eigen_waarde_nooit_overschreven_idempotent()
+    test_template_waarden_2025_model_worden_vervangen()
     print("OK")

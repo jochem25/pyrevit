@@ -34,8 +34,11 @@ Test: `python extensions/GIS2BIM.extension/tests/test_location_mapping.py`.
   (`TEMPLATE_IFC_GUIDS`); eigen waarden blijven staan. Achtergrond: bij lege velden
   leidt de exporter de GUID af van de UniqueId van ProjectInformation, die in elke
   kopie van de template gelijk is. Template_v2: velden leeg.
-- [ ] Voorstel: losse knop "Nieuw project: IFC-GUID's" voor modellen uit andere
-  templates (2025_model en 2786 delen ProjectInformation-UniqueId 5ccf6065-...-0000045e).
+- [x] Knop `Bouwkunde > IFC > Nieuw project: IFC-GUID's` (besluit Jochem 06-10). Logica
+  gedeeld in `GIS2BIM.extension/lib/gis2bim/revit/ifc_guid.py` (ook gebruikt door
+  Locatie Instellen). Template-waarden 2025_model gemeten en toegevoegd.
+- [ ] Proef van de knop in Revit (kopie, export, tweede keer niets) - wacht op een
+  veilige Revit-sessie (niet in een sessie met een werkmodel van Jochem).
 - [x] Perceelkeuze: `_parse_location_doc` kiest nu het perceel onder het adrespunt
   (kadastrale-kaart-WFS, `kies_perceel`); terugval op `gekoppeld_perceel[0]` met
   waarschuwing. 5008 -> GVH23 AF 2487 (was 3974). WFS-veldnamen gecorrigeerd
